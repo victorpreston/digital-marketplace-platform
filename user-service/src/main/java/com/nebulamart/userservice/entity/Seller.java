@@ -32,6 +32,6 @@ public class Seller {
     @DynamoDBAttribute
     private float rating;
     @DynamoDBAttribute
-    private int ratedCount;
+    private int ratingCount;
 
 }

@@ -28,7 +28,7 @@ public class Courier {
     @DynamoDBAttribute
     private float rating;
     @DynamoDBAttribute
-    private int ratedCount;
+    private int ratingCount;
     @DynamoDBAttribute
     private float unitDeliveryCharge;
 
