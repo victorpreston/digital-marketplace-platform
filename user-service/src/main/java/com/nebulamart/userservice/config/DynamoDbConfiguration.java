@@ -1,33 +1,24 @@
 package com.nebulamart.userservice.config;
 
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 @Configuration
 public class DynamoDbConfiguration {
 
     @Bean
-    public DynamoDBMapper dynamoDBMapper() {
-        return new DynamoDBMapper(buildAmazonDynamoDB());
-    }
+    public DynamoDbClient dynamoDbClient() {
+        AwsCredentialsProvider awsCredentialsProvider = StaticCredentialsProvider.create(
+                AwsBasicCredentials.create("${AWS_ACCESS_KEY}", "${AWS_SECRET_KEY}"));
 
-    private AmazonDynamoDB buildAmazonDynamoDB() {
-        return AmazonDynamoDBClientBuilder
-                .standard()
-                .withRegion("us-east-1")
-                .withCredentials(
-                        new AWSStaticCredentialsProvider(
-                                new BasicAWSCredentials(
-                                        "${AWS_ACCESS_KEY}",
-                                        "${AWS_SECRET_KEY}"
-                                )
-                        )
-                )
+        return DynamoDbClient.builder()
+                .region(Region.US_EAST_1)
+                .credentialsProvider(awsCredentialsProvider)
                 .build();
     }
 }
