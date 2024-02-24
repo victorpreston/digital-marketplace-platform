@@ -25,4 +25,9 @@ public class ProductController {
     public void deleteProduct(@PathVariable("id") String id) {
         productRepository.deleteProduct(id);
     }
+
+    @PutMapping("/product/{id}")
+    public Product updateProduct(@PathVariable("id") String id, @RequestBody Product product) {
+        return productRepository.updateProduct(id, product);
+    }
 }

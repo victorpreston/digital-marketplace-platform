@@ -18,4 +18,31 @@ public class Product {
     private String name;
     @DynamoDBAttribute
     private String description;
+    @DynamoDBAttribute
+    private String brand;
+    @DynamoDBAttribute
+    private String imageUrl;
+    @DynamoDBAttribute
+    private String category;
+
+    @DynamoDBAttribute
+    private int stock;
+    @DynamoDBAttribute
+    private float price;
+    @DynamoDBAttribute
+    private float rating;
+    @DynamoDBAttribute
+    private int reviewCount;
+
+    @DynamoDBAttribute
+    private String sellerId;
+    @DynamoDBAttribute
+    private String sellerName;
+    @DynamoDBAttribute
+    private String courierId;
+    @DynamoDBAttribute
+    private String courierName;
+    @DynamoDBAttribute
+    private String status;
+
 }
