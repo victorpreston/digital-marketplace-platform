@@ -1,2 +1,9 @@
 server:
   port: 9002
+
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: https://cognito-idp.us-east-1.amazonaws.com/us-east-1_vZN7WiYNK
