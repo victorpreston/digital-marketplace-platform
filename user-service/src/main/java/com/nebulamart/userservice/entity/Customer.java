@@ -20,7 +20,6 @@ public class Customer {
     private String contactNumber;
     private List<Float> location;
     private String address;
-    private Boolean isVerified;
 
     @DynamoDbPartitionKey
     public String getId() {

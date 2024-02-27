@@ -1,8 +1,8 @@
 package com.nebulamart.userservice.service;
 import com.nebulamart.userservice.template.CustomerSignUp;
 import com.nebulamart.userservice.template.SignInResponse;
+import com.nebulamart.userservice.template.StatusResponse;
 import com.nebulamart.userservice.template.UserSignIn;
-import jakarta.servlet.http.HttpSession;
 
 import com.nebulamart.userservice.entity.Customer;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,16 +14,10 @@ import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
 import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.*;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-import software.amazon.awssdk.services.dynamodb.model.AttributeAction;
-import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
-import software.amazon.awssdk.services.dynamodb.model.AttributeValueUpdate;
-import software.amazon.awssdk.services.dynamodb.model.UpdateItemRequest;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.util.*;
 
 @Service
@@ -56,7 +50,7 @@ public class CustomerService {
 
         AttributeType attributeRole = AttributeType.builder()
                 .name("custom:role")
-                .value("customer")
+                .value("CUSTOMER")
                 .build();
 
         List<AttributeType> attrs = new ArrayList<>();
@@ -74,7 +68,7 @@ public class CustomerService {
 
             SignUpResponse result = cognitoClient.signUp(signUpRequest);
             String userId = result.userSub();
-            Customer customer = new Customer(userId, customerSignUp.getName(), customerSignUp.getEmail(), customerSignUp.getContactNumber(), customerSignUp.getLocation(), customerSignUp.getAddress(), false);
+            Customer customer = new Customer(userId, customerSignUp.getName(), customerSignUp.getEmail(), customerSignUp.getContactNumber(), customerSignUp.getLocation(), customerSignUp.getAddress());
 
             DynamoDbTable<Customer> customerTable = enhancedClient.table("Customer", TableSchema.fromBean(Customer.class));
             customerTable.putItem(customer);
@@ -86,11 +80,7 @@ public class CustomerService {
         }
     }
 
-    public Boolean confirmSignUp(String email, String confirmationCode) {
-
-        DynamoDbEnhancedClient enhancedClient = DynamoDbEnhancedClient.builder()
-                .dynamoDbClient(dynamoDbClient)
-                .build();
+    public StatusResponse confirmSignUp(String email, String confirmationCode) {
 
         ConfirmSignUpRequest req = ConfirmSignUpRequest.builder()
                 .clientId(clientId)
@@ -100,39 +90,15 @@ public class CustomerService {
                 .build();
 
         try {
-//            HashMap<String, AttributeValue> itemKey = new HashMap<>();
-//            itemKey.put("email", AttributeValue.builder()
-//                    .s(email)
-//                    .build());
-//
-//            HashMap<String, AttributeValueUpdate> updatedValues = new HashMap<>();
-//            updatedValues.put("isVerified", AttributeValueUpdate.builder()
-//                    .value(AttributeValue.builder().bool(true).build())
-//                    .action(AttributeAction.PUT)
-//                    .build());
-//
-//            UpdateItemRequest request = UpdateItemRequest.builder()
-//                    .tableName("Customer")
-//                    .key(itemKey)
-//                    .attributeUpdates(updatedValues)
-//                    .build();
-//
-//            dynamoDbClient.updateItem(request);
-//            return true;
-
             ConfirmSignUpResponse response = cognitoClient.confirmSignUp(req);
             if (response.sdkHttpResponse().isSuccessful()) {
-//                DynamoDbTable<Customer> customerTable = enhancedClient.table("Customer", TableSchema.fromBean(Customer.class));
-//                Customer customer = customerTable.getItem(r -> r.key("email", email));
-//                customer.setIsVerified(true);
-//                customerTable.updateItem(customer);
-                return true;
+                return new StatusResponse(true);
             } else {
-                return false;
+                return new StatusResponse(false);
             }
         } catch (CognitoIdentityProviderException e) {
             System.err.println(e.awsErrorDetails().errorMessage());
-            return false;
+            return new StatusResponse(false);
         }
     }
 
@@ -151,31 +117,14 @@ public class CustomerService {
                     .authParameters(authParams)
                     .build();
 
-            System.out.println("Auth Request: " + authRequest);
-
             AdminInitiateAuthResponse result = cognitoClient.adminInitiateAuth(authRequest);
-            System.out.println(result.authenticationResult().accessToken());
+            return new SignInResponse(result.authenticationResult().idToken(), result.authenticationResult().accessToken());
 
-            return new SignInResponse(result.authenticationResult().idToken());
         } catch (CognitoIdentityProviderException e) {
             System.err.println(e.awsErrorDetails().errorMessage());
             return null;
         }
-
     }
-
-    public void signOut() {
-        String accessToken = "eyJraWQiOiJqRUNMYldcL1JBNGVkQmQzaEpQZjI3SlB4ZnpyY1EyRVowZG5ybGQ2OUhoMD0iLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiIwNDY4YTRjOC03MGExLTcwZGQtMmVjOS0wMjc5YjUyNmY3N2UiLCJpc3MiOiJodHRwczpcL1wvY29nbml0by1pZHAudXMtZWFzdC0xLmFtYXpvbmF3cy5jb21cL3VzLWVhc3QtMV92Wk43V2lZTksiLCJjbGllbnRfaWQiOiIxZmpuOHY2b3NhcXY5dWR0aWNoZDNvMnZyOCIsIm9yaWdpbl9qdGkiOiJhMzc4MTNjNC1lYzM4LTQ1OGQtOTk1Yi0zMzRjNzE0NWMzNDYiLCJldmVudF9pZCI6IjIwNmQ4NWYzLTczNmQtNDM0Zi1hZTJmLTU1MGMxODMzYjIyOCIsInRva2VuX3VzZSI6ImFjY2VzcyIsInNjb3BlIjoiYXdzLmNvZ25pdG8uc2lnbmluLnVzZXIuYWRtaW4iLCJhdXRoX3RpbWUiOjE3MDg5MjQyMzYsImV4cCI6MTcwODkyNzgzNiwiaWF0IjoxNzA4OTI0MjM2LCJqdGkiOiI5NzU0ZDZhNS1iZGRmLTRmYmEtOTk4Mi1mZjdhMTVkOWU0MDYiLCJ1c2VybmFtZSI6IjA0NjhhNGM4LTcwYTEtNzBkZC0yZWM5LTAyNzliNTI2Zjc3ZSJ9.ECYh4buR19Q_7QZgnyutIfIVPwh2z0p-3SwbCMSkiNK81CR3YGnAp-S6Sm4OKZi-6iw3JJf_s91r6IxvrAkl4-jQgLtn_xSTlquOW1nfTu8iIypRxiT-lSg9d0x9t7Qgd-FVfHB9_Jlu04JhUxqluLtaf0NAH8Ag0q5mahWVCqCCh4QOrOHcNOzcTHp10SmFYP3LRF7h9urDoN2y2gASSKpD8xOqSHImQZ0dh8e5-tVy2LBjw0G79kNRZvWopxrxGDlDdV0VAt82JZdVKZfzVmARtJpAcQzbzINOUkuH7RhKe4z5GdiqTPV426l_SyJcb-u9g_JIek4WaytU7sNi2g";
-
-        GlobalSignOutRequest signOutRequest = GlobalSignOutRequest.builder()
-                .accessToken(accessToken)
-                .build();
-
-        GlobalSignOutResponse response = cognitoClient.globalSignOut(signOutRequest);
-        System.out.println(response);
-    }
-
-
 
     private static String calculateSecretHash(String userPoolClientId, String userPoolClientSecret, String userName) {
         final String HMAC_SHA256_ALGORITHM = "HmacSHA256";
@@ -193,6 +142,8 @@ public class CustomerService {
             throw new RuntimeException("Error while calculating ");
         }
     }
+
+
 
     public void changeTempPassword(){
 

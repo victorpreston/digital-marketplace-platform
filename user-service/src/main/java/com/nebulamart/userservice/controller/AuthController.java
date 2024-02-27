@@ -4,10 +4,10 @@ import com.nebulamart.userservice.entity.Customer;
 import com.nebulamart.userservice.service.CustomerService;
 import com.nebulamart.userservice.template.CustomerSignUp;
 import com.nebulamart.userservice.template.SignInResponse;
+import com.nebulamart.userservice.template.StatusResponse;
 import com.nebulamart.userservice.template.UserSignIn;
 import jakarta.websocket.server.PathParam;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -23,20 +23,20 @@ public class AuthController {
 
     @PostMapping("/sign-up/customer")
     public Customer CustomerSignUp(@RequestBody CustomerSignUp customerSignUp) {
-        Customer customer = customerService.customerSignUp(customerSignUp);
-        return customer;
+        return customerService.customerSignUp(customerSignUp);
     }
 
     @GetMapping("/verify-account")
-    public Boolean confirmSignUp(@PathParam("email") String email, @PathParam("code") String code) {
-        Boolean confirmed = customerService.confirmSignUp(email, code);
-        return confirmed;
+    public StatusResponse confirmSignUp(@PathParam("email") String email, @PathParam("code") String code) {
+        return customerService.confirmSignUp(email, code);
     }
 
     @PostMapping("/sign-in/customer")
     public SignInResponse signIn(@RequestBody UserSignIn userSignIn) {
         return customerService.signIn(userSignIn);
     }
+
+
 
     @GetMapping("/test")
     public String test() {
