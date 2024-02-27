@@ -1,11 +1,23 @@
 package com.nebulamart.userservice.service;
+import com.nebulamart.userservice.template.CustomerSignUp;
+import com.nebulamart.userservice.template.SignInResponse;
+import com.nebulamart.userservice.template.UserSignIn;
 import jakarta.servlet.http.HttpSession;
 
 import com.nebulamart.userservice.entity.Customer;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
+import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
+import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
 import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.*;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.AttributeAction;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValueUpdate;
+import software.amazon.awssdk.services.dynamodb.model.UpdateItemRequest;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -20,29 +32,52 @@ public class CustomerService {
     private final CognitoIdentityProviderClient cognitoClient;
 
     @Autowired
+    private DynamoDbClient dynamoDbClient;
+
+    @Value("${aws-cognito.user-pool-id}")
+    private String userPoolId;
+
+    @Value("${aws-cognito.user-pool-client-id}")
+    private String clientId;
+
+    @Value("${aws-cognito.user-pool-client-secret}")
+    private String clientSecret;
+
+    @Autowired
     public CustomerService(CognitoIdentityProviderClient cognitoClient) {
         this.cognitoClient = cognitoClient;
     }
 
-    public Customer createNewCustomer(Customer customer) {
+    public Customer customerSignUp(CustomerSignUp customerSignUp) {
+
+        DynamoDbEnhancedClient enhancedClient = DynamoDbEnhancedClient.builder()
+                .dynamoDbClient(dynamoDbClient)
+                .build();
+
+        AttributeType attributeRole = AttributeType.builder()
+                .name("custom:role")
+                .value("customer")
+                .build();
+
+        List<AttributeType> attrs = new ArrayList<>();
+        attrs.add(attributeRole);
 
         try {
-            String newId = java.util.UUID.randomUUID().toString();
-            customer.setId(newId);
-
-            AdminCreateUserRequest createCustomerRequest = AdminCreateUserRequest.builder()
-                    .userPoolId("us-east-1_vZN7WiYNK")
-                    .username(customer.getEmail())
-                    .temporaryPassword("Key@1234")
-//                    .userAttributes(
-//                            AttributeType.builder().name("id").value(customer.getId()).build()
-//                    )
-                    .messageAction("SUPPRESS")
+            String secretVal = calculateSecretHash(clientId, clientSecret, customerSignUp.getEmail());
+            SignUpRequest signUpRequest = SignUpRequest.builder()
+                    .userAttributes(attrs)
+                    .username(customerSignUp.getEmail())
+                    .clientId(clientId)
+                    .password(customerSignUp.getPassword())
+                    .secretHash(secretVal)
                     .build();
 
-            AdminCreateUserResponse response = cognitoClient.adminCreateUser(createCustomerRequest);
-            System.out.println(
-                    "User " + response.user().username() + "is created. Status: " + response.user().userStatus());
+            SignUpResponse result = cognitoClient.signUp(signUpRequest);
+            String userId = result.userSub();
+            Customer customer = new Customer(userId, customerSignUp.getName(), customerSignUp.getEmail(), customerSignUp.getContactNumber(), customerSignUp.getLocation(), customerSignUp.getAddress(), false);
+
+            DynamoDbTable<Customer> customerTable = enhancedClient.table("Customer", TableSchema.fromBean(Customer.class));
+            customerTable.putItem(customer);
             return customer;
 
         } catch (CognitoIdentityProviderException e) {
@@ -51,50 +86,82 @@ public class CustomerService {
         }
     }
 
-    public void signUp() {
-        String email = "sharadashehan6@gmail.com";
-        String password = "Key@1234";
+    public Boolean confirmSignUp(String email, String confirmationCode) {
 
-        String CLIENT_ID = "1fjn8v6osaqv9udtichd3o2vr8";
-        String CLIENT_SECRET = "13or9t1duhuu8ktof3s3eq2fct70q9qspddji1ip3ebd9kjkcmr3";
-        String USER_POOL_ID = "us-east-1_vZN7WiYNK";
-
-        AttributeType attributePhoneNumber = AttributeType.builder()
-                .name("phone_number")
-                .value("+94781748749")
+        DynamoDbEnhancedClient enhancedClient = DynamoDbEnhancedClient.builder()
+                .dynamoDbClient(dynamoDbClient)
                 .build();
 
-        AttributeType attributeName = AttributeType.builder()
-                .name("name")
-                .value("Sharada Shehan")
+        ConfirmSignUpRequest req = ConfirmSignUpRequest.builder()
+                .clientId(clientId)
+                .secretHash(calculateSecretHash(clientId, clientSecret, email))
+                .confirmationCode(confirmationCode)
+                .username(email)
                 .build();
-
-        List<AttributeType> attrs = new ArrayList<>();
-        attrs.add(attributePhoneNumber);
-        attrs.add(attributeName);
 
         try {
-            String secretVal = calculateSecretHash(CLIENT_ID, CLIENT_SECRET, email);
-            SignUpRequest signUpRequest = SignUpRequest.builder()
-                    .userAttributes(attrs)
-                    .username(email)
-                    .clientId(CLIENT_ID)
-                    .password(password)
-                    .secretHash(secretVal)
-                    .build();
+//            HashMap<String, AttributeValue> itemKey = new HashMap<>();
+//            itemKey.put("email", AttributeValue.builder()
+//                    .s(email)
+//                    .build());
+//
+//            HashMap<String, AttributeValueUpdate> updatedValues = new HashMap<>();
+//            updatedValues.put("isVerified", AttributeValueUpdate.builder()
+//                    .value(AttributeValue.builder().bool(true).build())
+//                    .action(AttributeAction.PUT)
+//                    .build());
+//
+//            UpdateItemRequest request = UpdateItemRequest.builder()
+//                    .tableName("Customer")
+//                    .key(itemKey)
+//                    .attributeUpdates(updatedValues)
+//                    .build();
+//
+//            dynamoDbClient.updateItem(request);
+//            return true;
 
-            SignUpResponse result = cognitoClient.signUp(signUpRequest);
-            System.out.println(result);
-            System.out.println("User has been signed up");
-
+            ConfirmSignUpResponse response = cognitoClient.confirmSignUp(req);
+            if (response.sdkHttpResponse().isSuccessful()) {
+//                DynamoDbTable<Customer> customerTable = enhancedClient.table("Customer", TableSchema.fromBean(Customer.class));
+//                Customer customer = customerTable.getItem(r -> r.key("email", email));
+//                customer.setIsVerified(true);
+//                customerTable.updateItem(customer);
+                return true;
+            } else {
+                return false;
+            }
         } catch (CognitoIdentityProviderException e) {
             System.err.println(e.awsErrorDetails().errorMessage());
-            System.exit(1);
-//        } catch (NoSuchAlgorithmException e) {
-//            e.printStackTrace();
-//        } catch (InvalidKeyException e) {
-//            e.printStackTrace();
-       }
+            return false;
+        }
+    }
+
+    public SignInResponse signIn(UserSignIn userSignIn) {
+
+        final Map<String, String> authParams = new HashMap<>();
+        authParams.put("USERNAME", userSignIn.getEmail());
+        authParams.put("PASSWORD", userSignIn.getPassword());
+        authParams.put("SECRET_HASH", calculateSecretHash(clientId, clientSecret, userSignIn.getEmail()));
+
+        try {
+            final AdminInitiateAuthRequest authRequest = AdminInitiateAuthRequest.builder()
+                    .authFlow(AuthFlowType.ADMIN_USER_PASSWORD_AUTH)
+                    .clientId(clientId)
+                    .userPoolId(userPoolId)
+                    .authParameters(authParams)
+                    .build();
+
+            System.out.println("Auth Request: " + authRequest);
+
+            AdminInitiateAuthResponse result = cognitoClient.adminInitiateAuth(authRequest);
+            System.out.println(result.authenticationResult().accessToken());
+
+            return new SignInResponse(result.authenticationResult().idToken());
+        } catch (CognitoIdentityProviderException e) {
+            System.err.println(e.awsErrorDetails().errorMessage());
+            return null;
+        }
+
     }
 
     public void signOut() {
@@ -108,57 +175,7 @@ public class CustomerService {
         System.out.println(response);
     }
 
-    public void confirmSignUp(){
 
-        String email = "sharadashehan6@gmail.com";
-        String password = "Key@1234";
-
-        String CLIENT_ID = "1fjn8v6osaqv9udtichd3o2vr8";
-        String CLIENT_SECRET = "13or9t1duhuu8ktof3s3eq2fct70q9qspddji1ip3ebd9kjkcmr3";
-        String USER_POOL_ID = "us-east-1_vZN7WiYNK";
-        String confirmationCode = "282327";
-
-        ConfirmSignUpRequest req = ConfirmSignUpRequest.builder()
-                .clientId(CLIENT_ID)
-                .secretHash(calculateSecretHash(CLIENT_ID, CLIENT_SECRET, email))
-                .confirmationCode(confirmationCode)
-                .username(email)
-                .build();
-
-        ConfirmSignUpResponse response = cognitoClient.confirmSignUp(req);
-        System.out.println(response);
-        System.out.println("User " + " sign up confirmed");
-    }
-
-    public String signIn(String username, String password) {
-
-        String CLIENT_ID = "1fjn8v6osaqv9udtichd3o2vr8";
-        String CLIENT_SECRET = "13or9t1duhuu8ktof3s3eq2fct70q9qspddji1ip3ebd9kjkcmr3";
-        String USER_POOL_ID = "us-east-1_vZN7WiYNK";
-
-        final Map<String, String> authParams = new HashMap<>();
-        authParams.put("USERNAME", username);
-        authParams.put("PASSWORD", password);
-        authParams.put("SECRET_HASH", calculateSecretHash(CLIENT_ID,
-                CLIENT_SECRET, username));
-
-        final AdminInitiateAuthRequest authRequest = AdminInitiateAuthRequest.builder()
-                .authFlow(AuthFlowType.ADMIN_USER_PASSWORD_AUTH)
-                .clientId(CLIENT_ID)
-                .userPoolId(USER_POOL_ID)
-                .authParameters(authParams)
-                .build();
-
-        AdminInitiateAuthResponse result = cognitoClient.adminInitiateAuth(authRequest);
-
-        System.out.println(result);
-
-        System.out.println(result.authenticationResult().accessToken());
-        System.out.println(result.authenticationResult().idToken());
-
-        return result.authenticationResult().accessToken();
-
-    }
 
     private static String calculateSecretHash(String userPoolClientId, String userPoolClientSecret, String userName) {
         final String HMAC_SHA256_ALGORITHM = "HmacSHA256";
@@ -202,4 +219,3 @@ public class CustomerService {
         }
     }
 }
-

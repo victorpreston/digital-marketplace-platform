@@ -7,14 +7,21 @@ import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import org.springframework.beans.factory.annotation.Value;
 
 @Configuration
 public class DynamoDbConfiguration {
 
+    @Value("${aws-role-user.access-key}")
+    private String accessKey;
+
+    @Value("${aws-role-user.secret-key}")
+    private String secretKey;
+
     @Bean
     public DynamoDbClient dynamoDbClient() {
         AwsCredentialsProvider awsCredentialsProvider = StaticCredentialsProvider.create(
-                AwsBasicCredentials.create("${AWS_ACCESS_KEY}", "${AWS_SECRET_KEY}"));
+                AwsBasicCredentials.create(accessKey, secretKey));
 
         return DynamoDbClient.builder()
                 .region(Region.US_EAST_1)

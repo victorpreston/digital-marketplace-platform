@@ -17,9 +17,10 @@ public class Customer {
     private String id;
     private String name;
     private String email;
-    private int contactNumber;
+    private String contactNumber;
     private List<Float> location;
     private String address;
+    private Boolean isVerified;
 
     @DynamoDbPartitionKey
     public String getId() {
@@ -27,3 +28,4 @@ public class Customer {
     }
 
 }
+
