@@ -16,4 +16,8 @@ public class CustomerSignUp {
     private List<Float> location;
     private String address;
 
+    public boolean isValid() {
+        return name != null && email != null && password != null && contactNumber != null && address != null;
+    }
+
 }

@@ -8,4 +8,8 @@ import lombok.Data;
 public class UserSignIn {
     private String email;
     private String password;
+
+    public boolean isValid() {
+        return email != null && password != null;
+    }
 }
