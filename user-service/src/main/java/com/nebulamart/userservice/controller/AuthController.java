@@ -1,11 +1,9 @@
 package com.nebulamart.userservice.controller;
 
 import com.nebulamart.userservice.entity.Customer;
+import com.nebulamart.userservice.template.*;
+import org.springframework.http.ResponseEntity;
 import com.nebulamart.userservice.service.CustomerService;
-import com.nebulamart.userservice.template.CustomerSignUp;
-import com.nebulamart.userservice.template.SignInResponse;
-import com.nebulamart.userservice.template.StatusResponse;
-import com.nebulamart.userservice.template.UserSignIn;
 import jakarta.websocket.server.PathParam;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -22,20 +20,40 @@ public class AuthController {
     }
 
     @PostMapping("/sign-up/customer")
-    public Customer CustomerSignUp(@RequestBody CustomerSignUp customerSignUp) {
-        return customerService.customerSignUp(customerSignUp);
+    public ResponseEntity<CustomerSignUpResponse> CustomerSignUp(@RequestBody CustomerSignUp customerSignUp) {
+        if (!customerSignUp.isValid()) {
+            return ResponseEntity.status(400).body(new CustomerSignUpResponse(null, "Missing required fields"));
+        }
+        Customer customer = customerService.customerSignUp(customerSignUp);
+        if (customer == null) {
+            return ResponseEntity.status(400).body(new CustomerSignUpResponse(null, "Sign up failed"));
+        }
+        return ResponseEntity.ok(new CustomerSignUpResponse(customer));
     }
 
     @GetMapping("/verify-account")
-    public StatusResponse confirmSignUp(@PathParam("email") String email, @PathParam("code") String code) {
-        return customerService.confirmSignUp(email, code);
+    public ResponseEntity<VerifyAccountResponse> confirmSignUp(@PathParam("email") String email, @PathParam("code") String code) {
+        if (email == null || code == null) {
+            return ResponseEntity.status(400).body(new VerifyAccountResponse(false, "Missing email or code"));
+        }
+        VerifyAccountResponse response = customerService.confirmSignUp(email, code);
+        if (!response.getSuccess()) {
+            return ResponseEntity.status(400).body(response);
+        }
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/sign-in/customer")
-    public SignInResponse signIn(@RequestBody UserSignIn userSignIn) {
-        return customerService.signIn(userSignIn);
+    public ResponseEntity<SignInResponse> signIn(@RequestBody UserSignIn userSignIn) {
+        if (!userSignIn.isValid()) {
+            return ResponseEntity.status(400).body(new SignInResponse(null, null, "Missing email or password"));
+        }
+        SignInResponse response = customerService.signIn(userSignIn);
+        if (response.getAccessToken() == null) {
+            return ResponseEntity.status(400).body(response);
+        }
+        return ResponseEntity.ok(response);
     }
-
 
 
     @GetMapping("/test")

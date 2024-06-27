@@ -1,8 +1,5 @@
 package com.nebulamart.userservice.service;
-import com.nebulamart.userservice.template.CustomerSignUp;
-import com.nebulamart.userservice.template.SignInResponse;
-import com.nebulamart.userservice.template.StatusResponse;
-import com.nebulamart.userservice.template.UserSignIn;
+import com.nebulamart.userservice.template.*;
 
 import com.nebulamart.userservice.entity.Customer;
 import org.springframework.beans.factory.annotation.Value;
@@ -80,7 +77,7 @@ public class CustomerService {
         }
     }
 
-    public StatusResponse confirmSignUp(String email, String confirmationCode) {
+    public VerifyAccountResponse confirmSignUp(String email, String confirmationCode) {
 
         ConfirmSignUpRequest req = ConfirmSignUpRequest.builder()
                 .clientId(clientId)
@@ -92,13 +89,13 @@ public class CustomerService {
         try {
             ConfirmSignUpResponse response = cognitoClient.confirmSignUp(req);
             if (response.sdkHttpResponse().isSuccessful()) {
-                return new StatusResponse(true);
+                return new VerifyAccountResponse(true, "Account verified successfully");
             } else {
-                return new StatusResponse(false);
+                return new VerifyAccountResponse(false, "Account verification failed");
             }
         } catch (CognitoIdentityProviderException e) {
             System.err.println(e.awsErrorDetails().errorMessage());
-            return new StatusResponse(false);
+            return new VerifyAccountResponse(false, e.awsErrorDetails().errorMessage());
         }
     }
 
@@ -122,7 +119,7 @@ public class CustomerService {
 
         } catch (CognitoIdentityProviderException e) {
             System.err.println(e.awsErrorDetails().errorMessage());
-            return null;
+            return new SignInResponse(null, null, e.awsErrorDetails().errorMessage());
         }
     }
 
