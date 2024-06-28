@@ -12,7 +12,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @DynamoDbBean
-public class Customer {
+public class Customer extends User {
 
     private String id;
     private String name;
