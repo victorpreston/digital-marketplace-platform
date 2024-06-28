@@ -1,15 +1,16 @@
 package com.nebulamart.userservice.service;
-import com.nebulamart.userservice.template.CustomerSignUp;
-import com.nebulamart.userservice.template.SignInResponse;
-import com.nebulamart.userservice.template.StatusResponse;
-import com.nebulamart.userservice.template.UserSignIn;
+import com.nebulamart.userservice.entity.User;
+import com.nebulamart.userservice.template.*;
 
 import com.nebulamart.userservice.entity.Customer;
+import com.nebulamart.userservice.util.AuthFacade;
+import com.nebulamart.userservice.util.WrappedUser;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
+import software.amazon.awssdk.enhanced.dynamodb.Key;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
 import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.*;
@@ -27,6 +28,9 @@ public class CustomerService {
 
     @Autowired
     private DynamoDbClient dynamoDbClient;
+
+    @Autowired
+    private AuthFacade authFacade;
 
     @Value("${aws-cognito.user-pool-id}")
     private String userPoolId;
@@ -80,7 +84,7 @@ public class CustomerService {
         }
     }
 
-    public StatusResponse confirmSignUp(String email, String confirmationCode) {
+    public VerifyAccountResponse confirmSignUp(String email, String confirmationCode) {
 
         ConfirmSignUpRequest req = ConfirmSignUpRequest.builder()
                 .clientId(clientId)
@@ -92,13 +96,13 @@ public class CustomerService {
         try {
             ConfirmSignUpResponse response = cognitoClient.confirmSignUp(req);
             if (response.sdkHttpResponse().isSuccessful()) {
-                return new StatusResponse(true);
+                return new VerifyAccountResponse(true, "Account verified successfully");
             } else {
-                return new StatusResponse(false);
+                return new VerifyAccountResponse(false, "Account verification failed");
             }
         } catch (CognitoIdentityProviderException e) {
             System.err.println(e.awsErrorDetails().errorMessage());
-            return new StatusResponse(false);
+            return new VerifyAccountResponse(false, e.awsErrorDetails().errorMessage());
         }
     }
 
@@ -122,7 +126,7 @@ public class CustomerService {
 
         } catch (CognitoIdentityProviderException e) {
             System.err.println(e.awsErrorDetails().errorMessage());
-            return null;
+            return new SignInResponse(null, null, e.awsErrorDetails().errorMessage());
         }
     }
 
@@ -143,30 +147,13 @@ public class CustomerService {
         }
     }
 
-
-
-    public void changeTempPassword(){
-
-        String CLIENT_ID = "1fjn8v6osaqv9udtichd3o2vr8";
-        String CLIENT_SECRET = "13or9t1duhuu8ktof3s3eq2fct70q9qspddji1ip3ebd9kjkcmr3";
-        String USER_POOL_ID = "us-east-1_vZN7WiYNK";
-        String newPassword = "Key@1234";
-
+    public Customer getCustomerDetails(String customerId) {
         try {
-            AdminSetUserPasswordRequest passwordRequest = AdminSetUserPasswordRequest.builder()
-                    .username("sharadashehan6@gmail.com")
-                    .userPoolId(USER_POOL_ID)
-                    .password(newPassword)
-                    .permanent(true)
-                    .build();
-
-            AdminSetUserPasswordResponse response = cognitoClient.adminSetUserPassword(passwordRequest);
-            System.out.println(response);
-            System.out.println("The password was successfully changed");
-
-        } catch(CognitoIdentityProviderException e) {
-            System.err.println(e.awsErrorDetails().errorMessage());
-            System.exit(1);
+            WrappedUser wrappedUser = authFacade.getWrappedUser(customerId);
+            return (Customer) authFacade.getUser(wrappedUser);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
+        return null;
     }
 }

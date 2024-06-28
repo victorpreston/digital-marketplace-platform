@@ -1,7 +1,9 @@
 package com.nebulamart.userservice.controller;
 
+import com.nebulamart.userservice.entity.Customer;
 import com.nebulamart.userservice.service.CustomerService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -15,22 +17,17 @@ public class CustomerController {
         this.customerService = customerService;
     }
 
-
-    @GetMapping("/pw")
-    public String pw() {
-        customerService.changeTempPassword();
-        return "changed";
+    @GetMapping("/account-details")
+    public ResponseEntity<Customer> getCustomerDetails(@RequestHeader("Authorization") String accessToken) {
+        try {
+            Customer customer = customerService.getCustomerDetails(accessToken);
+            if (customer == null) {
+                return ResponseEntity.status(404).build();
+            }
+            return ResponseEntity.ok(customer);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(400).build();
+        }
     }
-
-    @GetMapping("/test")
-    public String test() {
-        return "Test";
-    }
-
-    @GetMapping("/test2")
-//    @PreAuthorize("hasAuthority('GROUP_admin')")
-    public String test2() {
-        return "Test";
-    }
-
 }
