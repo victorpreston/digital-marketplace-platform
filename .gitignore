@@ -23,6 +23,7 @@ buildNumber.properties
 .idea/
 .idea/*
 
+
 # environment
 user-service/src/main/resources/application.yml
 product-service/src/main/resources/application.yml
