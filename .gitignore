@@ -22,3 +22,8 @@ buildNumber.properties
 *.ipr
 .idea/
 .idea/*
+
+# environment
+user-service/src/main/resources/application.yml
+product-service/src/main/resources/application.yml
+order-service/src/main/resources/application.yml
