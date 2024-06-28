@@ -4,26 +4,26 @@ import com.nebulamart.userservice.entity.User;
 
 public class WrappedUser {
     private String cognitoUsername;
-    private String email;
     private String role;
+    private String email;
     private User user = null;
 
-    public WrappedUser(String cognitoUsername, String email, String role) {
+    public WrappedUser(String cognitoUsername, String role, String email) {
         this.cognitoUsername = cognitoUsername;
-        this.email = email;
         this.role = role;
+        this.email = email;
     }
 
     public String getCognitoUsername() {
         return cognitoUsername;
     }
 
-    public String getEmail() {
-        return email;
-    }
-
     public String getRole() {
         return role;
+    }
+
+    public String getEmail() {
+        return email;
     }
 
     public User getUser() {

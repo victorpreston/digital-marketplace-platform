@@ -55,11 +55,21 @@ public class UserService {
     public ChangePasswordResponse changeTempPassword(String accessToken, String oldPassword, String newPassword) {
         try {
             WrappedUser wrappedUser = authFacade.getWrappedUser(accessToken);
-            String cognitoUsername = wrappedUser.getCognitoUsername();
+            String cognitoUsername = authFacade.getCognitoUsername(wrappedUser);
+            String email = authFacade.getEmail(wrappedUser);
+            String role = authFacade.getRole(wrappedUser);
 
-            SignInResponse signInResponse = customerService.signIn(new UserSignIn(wrappedUser.getEmail(), oldPassword));
-            if (signInResponse.getAccessToken() == null) {
-                throw new Exception("Invalid old password");
+            if (role.equals("CUSTOMER")) {
+                SignInResponse signInResponse = customerService.signIn(new UserSignIn(email, oldPassword));
+                if (signInResponse.getAccessToken() == null) {
+                    throw new Exception("Invalid old password");
+                }
+            } else if (role.equals("SELLER")) {
+                throw new Exception("Not implemented");
+            } else if (role.equals("COURIER")) {
+                throw new Exception("Not implemented");
+            } else {
+                throw new Exception("Invalid role");
             }
 
             AdminSetUserPasswordRequest passwordRequest = AdminSetUserPasswordRequest.builder()
