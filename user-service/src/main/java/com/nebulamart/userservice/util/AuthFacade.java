@@ -22,7 +22,7 @@ public class AuthFacade {
     public WrappedUser getWrappedUser(String accessToken) throws JsonProcessingException {
         JwtParser jwtParser = new JwtParser(accessToken);
         jwtParser.parseJwt();
-        return new WrappedUser(jwtParser.getCognitoUsername(), jwtParser.getRole());
+        return new WrappedUser(jwtParser.getCognitoUsername(), jwtParser.getRole(), jwtParser.getEmail());
     }
 
     public String getRole(WrappedUser wrappedUser) {

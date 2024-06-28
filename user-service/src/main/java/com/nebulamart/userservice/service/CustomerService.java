@@ -10,7 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
-import software.amazon.awssdk.enhanced.dynamodb.Key;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
 import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.*;
@@ -147,9 +146,9 @@ public class CustomerService {
         }
     }
 
-    public Customer getCustomerDetails(String customerId) {
+    public Customer getCustomerDetails(String accessToken) {
         try {
-            WrappedUser wrappedUser = authFacade.getWrappedUser(customerId);
+            WrappedUser wrappedUser = authFacade.getWrappedUser(accessToken);
             return (Customer) authFacade.getUser(wrappedUser);
         } catch (Exception e) {
             e.printStackTrace();
