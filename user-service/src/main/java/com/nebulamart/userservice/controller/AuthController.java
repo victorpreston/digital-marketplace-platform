@@ -8,6 +8,7 @@ import jakarta.websocket.server.PathParam;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
@@ -54,17 +55,5 @@ public class AuthController {
         }
         return ResponseEntity.ok(response);
     }
-
-
-    @GetMapping("/test")
-    public String test() {
-        return "test";
-    }
-
-    @PostMapping("/test2")
-    public String test2() {
-        return "test2";
-    }
-
 
 }
