@@ -1,23 +1,37 @@
 package com.nebulamart.userservice.controller;
 
 import com.nebulamart.userservice.entity.Customer;
+import com.nebulamart.userservice.service.ImageUploadService;
 import com.nebulamart.userservice.template.*;
 import org.springframework.http.ResponseEntity;
 import com.nebulamart.userservice.service.CustomerService;
 import jakarta.websocket.server.PathParam;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
-
+    private final ImageUploadService imageUploadService;
     private final CustomerService customerService;
 
     @Autowired
-    public AuthController(CustomerService customerService) {
+    public AuthController(CustomerService customerService, ImageUploadService imageUploadService) {
+        this.imageUploadService = imageUploadService;
         this.customerService = customerService;
+    }
+
+    @GetMapping("/profile-image-upload-url")
+    public ResponseEntity<GetUrlResponse> getPreSignedUrl(@PathParam("extension") String extension) {
+        if (extension == null || extension.isEmpty()) {
+            return ResponseEntity.status(400).body(new GetUrlResponse(null, "Missing or invalid extension"));
+        }
+        String preSignedUrl = imageUploadService.getPreSignedUrl("users" + "/" + UUID.randomUUID().toString() + "." + extension);
+        if (preSignedUrl == null) {
+            return ResponseEntity.status(400).body(new GetUrlResponse(null, "Failed to get pre-signed URL"));
+        }
+        return ResponseEntity.ok(new GetUrlResponse(preSignedUrl, "Pre-signed URL generated successfully"));
     }
 
     @PostMapping("/sign-up/customer")
