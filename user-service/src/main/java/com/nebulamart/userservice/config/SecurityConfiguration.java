@@ -29,7 +29,7 @@ public class SecurityConfiguration {
                         .requestMatchers("/auth/**").permitAll()
                 )
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/customers/test2").hasAuthority("ROLE_CUSTOMER")
+                        .requestMatchers("/customers/**").hasAuthority("ROLE_CUSTOMER")
                 )
                 .authorizeHttpRequests(authorize -> authorize
                         .anyRequest().authenticated()
