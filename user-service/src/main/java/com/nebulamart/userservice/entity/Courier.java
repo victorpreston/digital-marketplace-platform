@@ -19,7 +19,6 @@ public class Courier extends User {
     private String logoUrl;
     private float rating;
     private int ratingCount;
-    private float unitDeliveryCharge;
 
     @DynamoDbPartitionKey
     public String getId() {

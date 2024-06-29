@@ -1,4 +1,4 @@
-package com.nebulamart.orderservice.entity;
+package com.nebulamart.productservice.entity;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -10,31 +10,18 @@ import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbParti
 @AllArgsConstructor
 @NoArgsConstructor
 @DynamoDbBean
-public class Order {
+public class Contract {
 
     private String id;
     private String productId;
-    private String productName;
     private String sellerId;
-    private String sellerName;
-    private String sellerLogoUrl;
     private String courierId;
-    private String courierName;
-    private String courierLogoUrl;
-    private String customerId;
-    private String customerName;
-    private String customerContactNumber;
-
-    private float finalPrice;
-    private String deliveryAddress;
-    private String dispatchDate;
-    private String deliveryDate;
-    private OrderStatus status;
+    private float deliveryCharge;
+    private ContractStatus status;
 
     @DynamoDbPartitionKey
     public String getId() {
         return id;
     }
-
 }
 

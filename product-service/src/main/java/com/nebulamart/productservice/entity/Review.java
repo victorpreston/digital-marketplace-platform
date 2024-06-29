@@ -1,6 +1,5 @@
 package com.nebulamart.productservice.entity;
 
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -15,11 +14,13 @@ public class Review {
 
     private String id;
     private String productId;
-    private String productName;
+    private String sellerId;
+    private String courierId;
     private String orderId;
     private String customerId;
     private String customerName;
-    private String description;
+    private String productReview;
+    private String courierReview;
     private int productRating;
     private int courierRating;
 
