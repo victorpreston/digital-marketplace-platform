@@ -15,7 +15,7 @@ public class Courier extends User {
     private String id;
     private String name;
     private String email;
-    private int contactNumber;
+    private String contactNumber;
     private String logoUrl;
     private float rating;
     private int ratingCount;
