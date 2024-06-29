@@ -29,6 +29,9 @@ public class SecurityConfiguration {
                         .requestMatchers("/auth/**").permitAll()
                 )
                 .authorizeHttpRequests(authorize -> authorize
+                        .requestMatchers("/open/**").permitAll()
+                )
+                .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/customers/**").hasAuthority("ROLE_CUSTOMER")
                 )
                 .authorizeHttpRequests(authorize -> authorize
