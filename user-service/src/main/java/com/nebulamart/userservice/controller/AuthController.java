@@ -1,37 +1,30 @@
 package com.nebulamart.userservice.controller;
 
+import com.nebulamart.userservice.entity.Courier;
 import com.nebulamart.userservice.entity.Customer;
-import com.nebulamart.userservice.service.ImageUploadService;
+import com.nebulamart.userservice.entity.Seller;
+import com.nebulamart.userservice.service.*;
 import com.nebulamart.userservice.template.*;
 import org.springframework.http.ResponseEntity;
-import com.nebulamart.userservice.service.CustomerService;
 import jakarta.websocket.server.PathParam;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
-    private final ImageUploadService imageUploadService;
+
     private final CustomerService customerService;
+    private final SellerService sellerService;
+    private final CourierService courierService;
+    private final UserService userService;
 
     @Autowired
-    public AuthController(CustomerService customerService, ImageUploadService imageUploadService) {
-        this.imageUploadService = imageUploadService;
+    public AuthController(CustomerService customerService, SellerService sellerService, CourierService courierService, UserService userService) {
         this.customerService = customerService;
-    }
-
-    @GetMapping("/profile-image-upload-url")
-    public ResponseEntity<GetUrlResponse> getPreSignedUrl(@PathParam("extension") String extension) {
-        if (extension == null || extension.isEmpty()) {
-            return ResponseEntity.status(400).body(new GetUrlResponse(null, "Missing or invalid extension"));
-        }
-        String preSignedUrl = imageUploadService.getPreSignedUrl("users" + "/" + UUID.randomUUID().toString() + "." + extension);
-        if (preSignedUrl == null) {
-            return ResponseEntity.status(400).body(new GetUrlResponse(null, "Failed to get pre-signed URL"));
-        }
-        return ResponseEntity.ok(new GetUrlResponse(preSignedUrl, "Pre-signed URL generated successfully"));
+        this.sellerService = sellerService;
+        this.courierService = courierService;
+        this.userService = userService;
     }
 
     @PostMapping("/sign-up/customer")
@@ -46,24 +39,48 @@ public class AuthController {
         return ResponseEntity.ok(new CustomerSignUpResponse(customer));
     }
 
+    @PostMapping("/sign-up/seller")
+    public ResponseEntity<SellerSignUpResponse> SellerSignUp(@RequestBody SellerSignUp sellerSignUp) {
+        if (!sellerSignUp.isValid()) {
+            return ResponseEntity.status(400).body(new SellerSignUpResponse(null, "Missing required fields"));
+        }
+        Seller seller = sellerService.sellerSignUp(sellerSignUp);
+        if (seller == null) {
+            return ResponseEntity.status(400).body(new SellerSignUpResponse(null, "Sign up failed"));
+        }
+        return ResponseEntity.ok(new SellerSignUpResponse(seller));
+    }
+
+    @PostMapping("/sign-up/courier")
+    public ResponseEntity<CourierSignUpResponse> CourierSignUp(@RequestBody CourierSignUp courierSignUp) {
+        if (!courierSignUp.isValid()) {
+            return ResponseEntity.status(400).body(new CourierSignUpResponse(null, "Missing required fields"));
+        }
+        Courier courier = courierService.courierSignUp(courierSignUp);
+        if (courier == null) {
+            return ResponseEntity.status(400).body(new CourierSignUpResponse(null, "Sign up failed"));
+        }
+        return ResponseEntity.ok(new CourierSignUpResponse(courier));
+    }
+
     @GetMapping("/verify-account")
     public ResponseEntity<VerifyAccountResponse> confirmSignUp(@PathParam("email") String email, @PathParam("code") String code) {
         if (email == null || code == null) {
             return ResponseEntity.status(400).body(new VerifyAccountResponse(false, "Missing email or code"));
         }
-        VerifyAccountResponse response = customerService.confirmSignUp(email, code);
+        VerifyAccountResponse response = userService.confirmSignUp(email, code);
         if (!response.getSuccess()) {
             return ResponseEntity.status(400).body(response);
         }
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/sign-in/customer")
+    @PostMapping("/sign-in")
     public ResponseEntity<SignInResponse> signIn(@RequestBody UserSignIn userSignIn) {
         if (!userSignIn.isValid()) {
             return ResponseEntity.status(400).body(new SignInResponse(null, null, "Missing email or password"));
         }
-        SignInResponse response = customerService.signIn(userSignIn);
+        SignInResponse response = userService.signIn(userSignIn);
         if (response.getAccessToken() == null) {
             return ResponseEntity.status(400).body(response);
         }
