@@ -25,8 +25,16 @@ public class AuthFacade {
         return new WrappedUser(jwtParser.getCognitoUsername(), jwtParser.getRole(), jwtParser.getEmail());
     }
 
+    public String getCognitoUsername(WrappedUser wrappedUser) {
+        return wrappedUser.getCognitoUsername();
+    }
+
     public String getRole(WrappedUser wrappedUser) {
         return wrappedUser.getRole();
+    }
+
+    public String getEmail(WrappedUser wrappedUser) {
+        return wrappedUser.getEmail();
     }
 
     public User getUser(WrappedUser wrappedUser) {

@@ -6,8 +6,6 @@ import lombok.NoArgsConstructor;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
 
-import java.util.List;
-
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -18,7 +16,6 @@ public class Customer extends User {
     private String name;
     private String email;
     private String contactNumber;
-    private List<Float> location;
     private String address;
 
     @DynamoDbPartitionKey

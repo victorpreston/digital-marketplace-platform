@@ -17,18 +17,18 @@ public class Product {
     private String description;
     private String brand;
     private String imageUrl;
-    private String category;
+    private Category category;
 
     private int stock;
-    private float price;
+    private float basePrice;
+    private float discount;
     private float rating;
     private int ratingCount;
 
     private String sellerId;
-    private String sellerName;
     private String courierId;
-    private String courierName;
-    private String status;
+    private String contractId;
+    private ProductStatus status;
 
     @DynamoDbPartitionKey
     public String getId() {
@@ -36,3 +36,4 @@ public class Product {
     }
 
 }
+

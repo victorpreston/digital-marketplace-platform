@@ -1,12 +1,12 @@
 package com.nebulamart.userservice.service;
 
-import com.nebulamart.userservice.template.*;
-import com.nebulamart.userservice.entity.Customer;
+import com.nebulamart.userservice.entity.Seller;
+import com.nebulamart.userservice.template.SellerSignUp;
 import com.nebulamart.userservice.util.AuthFacade;
 import com.nebulamart.userservice.util.SecretHash;
 import com.nebulamart.userservice.util.WrappedUser;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
@@ -14,11 +14,11 @@ import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
 import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.*;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
-public class CustomerService {
-
+public class SellerService {
     private final CognitoIdentityProviderClient cognitoClient;
     private final DynamoDbClient dynamoDbClient;
     private final AuthFacade authFacade;
@@ -33,43 +33,42 @@ public class CustomerService {
     private String clientSecret;
 
     @Autowired
-    public CustomerService(CognitoIdentityProviderClient cognitoClient, DynamoDbClient dynamoDbClient, AuthFacade authFacade) {
+    public SellerService(CognitoIdentityProviderClient cognitoClient, DynamoDbClient dynamoDbClient, AuthFacade authFacade) {
         this.cognitoClient = cognitoClient;
         this.dynamoDbClient = dynamoDbClient;
         this.authFacade = authFacade;
     }
 
-    public Customer customerSignUp(CustomerSignUp customerSignUp) {
-
+    public Seller sellerSignUp(SellerSignUp sellerSignUp) {
         DynamoDbEnhancedClient enhancedClient = DynamoDbEnhancedClient.builder()
                 .dynamoDbClient(dynamoDbClient)
                 .build();
 
         AttributeType attributeRole = AttributeType.builder()
                 .name("custom:role")
-                .value("CUSTOMER")
+                .value("SELLER")
                 .build();
 
         List<AttributeType> attrs = new ArrayList<>();
         attrs.add(attributeRole);
 
         try {
-            String secretVal = SecretHash.calculateSecretHash(clientId, clientSecret, customerSignUp.getEmail());
+            String secretVal = SecretHash.calculateSecretHash(clientId, clientSecret, sellerSignUp.getEmail());
             SignUpRequest signUpRequest = SignUpRequest.builder()
-                    .userAttributes(attrs)
-                    .username(customerSignUp.getEmail())
                     .clientId(clientId)
-                    .password(customerSignUp.getPassword())
+                    .username(sellerSignUp.getEmail())
+                    .password(sellerSignUp.getPassword())
                     .secretHash(secretVal)
+                    .userAttributes(attrs)
                     .build();
 
             SignUpResponse result = cognitoClient.signUp(signUpRequest);
             String userId = result.userSub();
-            Customer customer = new Customer(userId, customerSignUp.getName(), customerSignUp.getEmail(), customerSignUp.getContactNumber(), customerSignUp.getAddress());
+            Seller seller = new Seller(userId, sellerSignUp.getName(), sellerSignUp.getEmail(), sellerSignUp.getContactNumber(), sellerSignUp.getAddress(), sellerSignUp.getLogoUrl(), 0, 0);
 
-            DynamoDbTable<Customer> customerTable = enhancedClient.table("Customer", TableSchema.fromBean(Customer.class));
-            customerTable.putItem(customer);
-            return customer;
+            DynamoDbTable<Seller> sellerTable = enhancedClient.table("Seller", TableSchema.fromBean(Seller.class));
+            sellerTable.putItem(seller);
+            return seller;
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -77,10 +76,10 @@ public class CustomerService {
         }
     }
 
-    public Customer getCustomerDetails(String accessToken) {
+    public Seller getSellerDetails(String accessToken) {
         try {
             WrappedUser wrappedUser = authFacade.getWrappedUser(accessToken);
-            return (Customer) authFacade.getUser(wrappedUser);
+            return (Seller) authFacade.getUser(wrappedUser);
         } catch (Exception e) {
             e.printStackTrace();
         }

@@ -1,4 +1,4 @@
-package com.nebulamart.userservice.entity;
+package com.nebulamart.productservice.entity;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -10,18 +10,18 @@ import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbParti
 @AllArgsConstructor
 @NoArgsConstructor
 @DynamoDbBean
-public class Courier extends User {
+public class Contract {
 
     private String id;
-    private String name;
-    private String email;
-    private String contactNumber;
-    private String logoUrl;
-    private float rating;
-    private int ratingCount;
+    private String productId;
+    private String sellerId;
+    private String courierId;
+    private float deliveryCharge;
+    private ContractStatus status;
 
     @DynamoDbPartitionKey
     public String getId() {
         return id;
     }
 }
+

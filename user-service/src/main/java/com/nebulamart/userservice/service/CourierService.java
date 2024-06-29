@@ -1,24 +1,26 @@
 package com.nebulamart.userservice.service;
 
-import com.nebulamart.userservice.template.*;
-import com.nebulamart.userservice.entity.Customer;
+import com.nebulamart.userservice.entity.Courier;
+import com.nebulamart.userservice.template.CourierSignUp;
 import com.nebulamart.userservice.util.AuthFacade;
 import com.nebulamart.userservice.util.SecretHash;
 import com.nebulamart.userservice.util.WrappedUser;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
 import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient;
-import software.amazon.awssdk.services.cognitoidentityprovider.model.*;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AttributeType;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.SignUpRequest;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.SignUpResponse;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
-public class CustomerService {
-
+public class CourierService {
     private final CognitoIdentityProviderClient cognitoClient;
     private final DynamoDbClient dynamoDbClient;
     private final AuthFacade authFacade;
@@ -33,13 +35,13 @@ public class CustomerService {
     private String clientSecret;
 
     @Autowired
-    public CustomerService(CognitoIdentityProviderClient cognitoClient, DynamoDbClient dynamoDbClient, AuthFacade authFacade) {
+    public CourierService(CognitoIdentityProviderClient cognitoClient, DynamoDbClient dynamoDbClient, AuthFacade authFacade) {
         this.cognitoClient = cognitoClient;
         this.dynamoDbClient = dynamoDbClient;
         this.authFacade = authFacade;
     }
 
-    public Customer customerSignUp(CustomerSignUp customerSignUp) {
+    public Courier courierSignUp(CourierSignUp courierSignUp) {
 
         DynamoDbEnhancedClient enhancedClient = DynamoDbEnhancedClient.builder()
                 .dynamoDbClient(dynamoDbClient)
@@ -47,29 +49,29 @@ public class CustomerService {
 
         AttributeType attributeRole = AttributeType.builder()
                 .name("custom:role")
-                .value("CUSTOMER")
+                .value("COURIER")
                 .build();
 
         List<AttributeType> attrs = new ArrayList<>();
         attrs.add(attributeRole);
 
         try {
-            String secretVal = SecretHash.calculateSecretHash(clientId, clientSecret, customerSignUp.getEmail());
+            String secretVal = SecretHash.calculateSecretHash(clientId, clientSecret, courierSignUp.getEmail());
             SignUpRequest signUpRequest = SignUpRequest.builder()
                     .userAttributes(attrs)
-                    .username(customerSignUp.getEmail())
+                    .username(courierSignUp.getEmail())
                     .clientId(clientId)
-                    .password(customerSignUp.getPassword())
+                    .password(courierSignUp.getPassword())
                     .secretHash(secretVal)
                     .build();
 
             SignUpResponse result = cognitoClient.signUp(signUpRequest);
             String userId = result.userSub();
-            Customer customer = new Customer(userId, customerSignUp.getName(), customerSignUp.getEmail(), customerSignUp.getContactNumber(), customerSignUp.getAddress());
+            Courier courier = new Courier(userId, courierSignUp.getName(), courierSignUp.getEmail(), courierSignUp.getContactNumber(), courierSignUp.getLogoUrl(), 0, 0);
 
-            DynamoDbTable<Customer> customerTable = enhancedClient.table("Customer", TableSchema.fromBean(Customer.class));
-            customerTable.putItem(customer);
-            return customer;
+            DynamoDbTable<Courier> courierTable = enhancedClient.table("Courier", TableSchema.fromBean(Courier.class));
+            courierTable.putItem(courier);
+            return courier;
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -77,14 +79,13 @@ public class CustomerService {
         }
     }
 
-    public Customer getCustomerDetails(String accessToken) {
+    public Courier getCourierDetails(String accessToken) {
         try {
             WrappedUser wrappedUser = authFacade.getWrappedUser(accessToken);
-            return (Customer) authFacade.getUser(wrappedUser);
+            return (Courier) authFacade.getUser(wrappedUser);
         } catch (Exception e) {
             e.printStackTrace();
         }
         return null;
     }
-
 }
