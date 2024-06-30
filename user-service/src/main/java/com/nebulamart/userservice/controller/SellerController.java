@@ -2,15 +2,14 @@ package com.nebulamart.userservice.controller;
 
 import com.nebulamart.userservice.entity.Seller;
 import com.nebulamart.userservice.service.SellerService;
+import com.nebulamart.userservice.template.SellerUpdate;
+import com.nebulamart.userservice.template.SellerUpdateResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/sellers")
+@RequestMapping("/seller")
 public class SellerController {
     private final SellerService sellerService;
 
@@ -19,18 +18,25 @@ public class SellerController {
         this.sellerService = sellerService;
     }
 
-    @GetMapping("/account-details")
+    @GetMapping("/account")
     public ResponseEntity<Seller> getSellerDetails(@RequestHeader("Authorization") String accessToken) {
-        try {
-            Seller seller = sellerService.getSellerDetails(accessToken);
-            if (seller == null) {
-                return ResponseEntity.status(404).build();
-            }
-            return ResponseEntity.ok(seller);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(400).build();
+        Seller seller = sellerService.getSellerDetails(accessToken);
+        if (seller == null) {
+            return ResponseEntity.status(404).build();
         }
+        return ResponseEntity.ok(seller);
+    }
+
+    @PatchMapping("/account")
+    public ResponseEntity<SellerUpdateResponse> updateSellerDetails(@RequestHeader("Authorization") String accessToken, @RequestBody SellerUpdate sellerUpdate) {
+        if (!sellerUpdate.isValid()) {
+            return ResponseEntity.status(400).body(new SellerUpdateResponse(null, "Missing required fields"));
+        }
+        Seller updatedSeller = sellerService.updateSellerDetails(accessToken, sellerUpdate);
+        if (updatedSeller == null) {
+            return ResponseEntity.status(400).body(new SellerUpdateResponse(null, "Update failed"));
+        }
+        return ResponseEntity.ok(new SellerUpdateResponse(updatedSeller));
     }
 
 }
