@@ -10,9 +10,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/users")
+@RequestMapping("/user")
 public class UserController {
-
     private final UserService userService;
 
     @Autowired
@@ -31,14 +30,15 @@ public class UserController {
             return ResponseEntity.status(400).body(new ChangePasswordResponse(false, "Missing old or new password"));
         }
         try {
-            ChangePasswordResponse response = userService.changeTempPassword(accessToken, changePassword.getOldPassword(), changePassword.getNewPassword());
-            if (!response.isSuccess()) {
-                return ResponseEntity.status(400).body(response);
+            ResponseEntity<ChangePasswordResponse> responseEntity = userService.changeTempPassword(accessToken, changePassword.getOldPassword(), changePassword.getNewPassword());
+            if (responseEntity == null) {
+                return ResponseEntity.status(400).body(new ChangePasswordResponse(false, "Failed to change password"));
             }
-            return ResponseEntity.ok(response);
+            return responseEntity;
         } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(400).body(new ChangePasswordResponse(false, "Failed to change password"));
+            System.out.println(e.getMessage());
+            return ResponseEntity.status(400).body(new ChangePasswordResponse(false, e.getMessage()));
         }
     }
+
 }

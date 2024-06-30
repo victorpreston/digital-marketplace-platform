@@ -19,23 +19,20 @@ public class ImageUploadService {
 
     public String getPreSignedUrl(String keyName) {
         try {
-
             PutObjectRequest objectRequest = PutObjectRequest.builder()
                     .bucket(bucketName)
                     .key(keyName)
                     .build();
-
             PutObjectPresignRequest presignRequest = PutObjectPresignRequest.builder()
                     .signatureDuration(Duration.ofMinutes(10)) // Set the presigned URL to expire after 10 minutes
                     .putObjectRequest(objectRequest)
                     .build();
-
-
             PresignedPutObjectRequest presignedRequest = s3Presigner.presignPutObject(presignRequest);
             return presignedRequest.url().toExternalForm();
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
             return null;
         }
     }
+
 }

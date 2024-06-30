@@ -32,11 +32,11 @@ public class AuthController {
         if (!customerSignUp.isValid()) {
             return ResponseEntity.status(400).body(new CustomerSignUpResponse(null, "Missing required fields"));
         }
-        Customer customer = customerService.customerSignUp(customerSignUp);
-        if (customer == null) {
+        ResponseEntity<CustomerSignUpResponse> responseEntity = customerService.customerSignUp(customerSignUp);
+        if (responseEntity == null) {
             return ResponseEntity.status(400).body(new CustomerSignUpResponse(null, "Sign up failed"));
         }
-        return ResponseEntity.ok(new CustomerSignUpResponse(customer));
+        return responseEntity;
     }
 
     @PostMapping("/sign-up/seller")
@@ -44,11 +44,11 @@ public class AuthController {
         if (!sellerSignUp.isValid()) {
             return ResponseEntity.status(400).body(new SellerSignUpResponse(null, "Missing required fields"));
         }
-        Seller seller = sellerService.sellerSignUp(sellerSignUp);
-        if (seller == null) {
+        ResponseEntity<SellerSignUpResponse> responseEntity = sellerService.sellerSignUp(sellerSignUp);
+        if (responseEntity == null) {
             return ResponseEntity.status(400).body(new SellerSignUpResponse(null, "Sign up failed"));
         }
-        return ResponseEntity.ok(new SellerSignUpResponse(seller));
+        return responseEntity;
     }
 
     @PostMapping("/sign-up/courier")
@@ -56,11 +56,11 @@ public class AuthController {
         if (!courierSignUp.isValid()) {
             return ResponseEntity.status(400).body(new CourierSignUpResponse(null, "Missing required fields"));
         }
-        Courier courier = courierService.courierSignUp(courierSignUp);
-        if (courier == null) {
+        ResponseEntity<CourierSignUpResponse> responseEntity = courierService.courierSignUp(courierSignUp);
+        if (responseEntity == null) {
             return ResponseEntity.status(400).body(new CourierSignUpResponse(null, "Sign up failed"));
         }
-        return ResponseEntity.ok(new CourierSignUpResponse(courier));
+        return responseEntity;
     }
 
     @GetMapping("/verify-account")
@@ -68,11 +68,11 @@ public class AuthController {
         if (email == null || code == null) {
             return ResponseEntity.status(400).body(new VerifyAccountResponse(false, "Missing email or code"));
         }
-        VerifyAccountResponse response = userService.confirmSignUp(email, code);
-        if (!response.getSuccess()) {
-            return ResponseEntity.status(400).body(response);
+        ResponseEntity<VerifyAccountResponse> responseEntity = userService.confirmSignUp(email, code);
+        if (responseEntity == null) {
+            return ResponseEntity.status(400).body(new VerifyAccountResponse(false, "Account verification failed"));
         }
-        return ResponseEntity.ok(response);
+        return responseEntity;
     }
 
     @PostMapping("/sign-in")
@@ -80,11 +80,11 @@ public class AuthController {
         if (!userSignIn.isValid()) {
             return ResponseEntity.status(400).body(new SignInResponse(null, null, "Missing email or password"));
         }
-        SignInResponse response = userService.signIn(userSignIn);
-        if (response.getAccessToken() == null) {
-            return ResponseEntity.status(400).body(response);
+        ResponseEntity<SignInResponse> responseEntity = userService.signIn(userSignIn);
+        if (responseEntity == null) {
+            return ResponseEntity.status(400).body(new SignInResponse(null, null, "Sign in failed"));
         }
-        return ResponseEntity.ok(response);
+        return responseEntity;
     }
 
 }

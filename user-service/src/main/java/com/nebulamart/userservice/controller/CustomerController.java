@@ -20,11 +20,11 @@ public class CustomerController {
 
     @GetMapping("/account")
     public ResponseEntity<Customer> getCustomerDetails(@RequestHeader("Authorization") String accessToken) {
-        Customer customer = customerService.getCustomerDetails(accessToken);
-        if (customer == null) {
-            return ResponseEntity.status(404).build();
+        ResponseEntity<Customer> responseEntity = customerService.getCustomerDetails(accessToken);
+        if (responseEntity == null) {
+            return ResponseEntity.status(400).body(null);
         }
-        return ResponseEntity.ok(customer);
+        return responseEntity;
     }
 
     @PatchMapping("/account")
@@ -32,11 +32,11 @@ public class CustomerController {
         if (!customerUpdate.isValid()) {
             return ResponseEntity.status(400).body(new CustomerUpdateResponse(null, "Missing required fields"));
         }
-        Customer updatedCustomer = customerService.updateCustomerDetails(accessToken, customerUpdate);
-        if (updatedCustomer == null) {
+        ResponseEntity<CustomerUpdateResponse> responseEntity = customerService.updateCustomerDetails(accessToken, customerUpdate);
+        if (responseEntity == null) {
             return ResponseEntity.status(400).body(new CustomerUpdateResponse(null, "Update failed"));
         }
-        return ResponseEntity.ok(new CustomerUpdateResponse(updatedCustomer));
+        return responseEntity;
     }
 
 }

@@ -7,6 +7,7 @@ import com.nebulamart.userservice.util.SecretHash;
 import com.nebulamart.userservice.util.WrappedUser;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
@@ -39,7 +40,7 @@ public class CustomerService {
         this.authFacade = authFacade;
     }
 
-    public Customer customerSignUp(CustomerSignUp customerSignUp) {
+    public ResponseEntity<CustomerSignUpResponse> customerSignUp(CustomerSignUp customerSignUp) {
 
         DynamoDbEnhancedClient enhancedClient = DynamoDbEnhancedClient.builder()
                 .dynamoDbClient(dynamoDbClient)
@@ -69,25 +70,25 @@ public class CustomerService {
 
             DynamoDbTable<Customer> customerTable = enhancedClient.table("Customer", TableSchema.fromBean(Customer.class));
             customerTable.putItem(customer);
-            return customer;
+            return ResponseEntity.ok(new CustomerSignUpResponse(customer));
 
         } catch (Exception e) {
-            e.printStackTrace();
-            return null;
+            System.out.println(e.getMessage());
+            return ResponseEntity.status(400).body(new CustomerSignUpResponse(null, e.getMessage()));
         }
     }
 
-    public Customer getCustomerDetails(String accessToken) {
+    public ResponseEntity<Customer> getCustomerDetails(String accessToken) {
         try {
             WrappedUser wrappedUser = authFacade.getWrappedUser(accessToken);
-            return (Customer) authFacade.getUser(wrappedUser);
+            return ResponseEntity.ok((Customer) authFacade.getUser(wrappedUser));
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
+            return ResponseEntity.status(400).body(null);
         }
-        return null;
     }
 
-    public Customer updateCustomerDetails(String accessToken, CustomerUpdate customerUpdate) {
+    public ResponseEntity<CustomerUpdateResponse> updateCustomerDetails(String accessToken, CustomerUpdate customerUpdate) {
         try {
             WrappedUser wrappedUser = authFacade.getWrappedUser(accessToken);
             Customer customer = (Customer) authFacade.getUser(wrappedUser);
@@ -106,12 +107,13 @@ public class CustomerService {
                         .build();
                 DynamoDbTable<Customer> customerTable = enhancedClient.table("Customer", TableSchema.fromBean(Customer.class));
                 customerTable.putItem(customer);
-                return customer;
+                return ResponseEntity.ok(new CustomerUpdateResponse(customer));
             }
+            return ResponseEntity.status(400).body(new CustomerUpdateResponse(null, "Customer not found"));
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
+            return ResponseEntity.status(400).body(new CustomerUpdateResponse(null, e.getMessage()));
         }
-        return null;
     }
 
 }

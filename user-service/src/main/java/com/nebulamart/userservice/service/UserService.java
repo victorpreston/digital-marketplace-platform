@@ -7,6 +7,7 @@ import com.nebulamart.userservice.util.SecretHash;
 import com.nebulamart.userservice.util.WrappedUser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.*;
@@ -35,7 +36,7 @@ public class UserService {
         this.authFacade = authFacade;
     }
 
-    public VerifyAccountResponse confirmSignUp(String email, String confirmationCode) {
+    public ResponseEntity<VerifyAccountResponse> confirmSignUp(String email, String confirmationCode) {
 
         ConfirmSignUpRequest req = ConfirmSignUpRequest.builder()
                 .clientId(clientId)
@@ -43,21 +44,19 @@ public class UserService {
                 .confirmationCode(confirmationCode)
                 .username(email)
                 .build();
-
         try {
             ConfirmSignUpResponse response = cognitoClient.confirmSignUp(req);
             if (response.sdkHttpResponse().isSuccessful()) {
-                return new VerifyAccountResponse(true, "Account verified successfully");
-            } else {
-                return new VerifyAccountResponse(false, "Account verification failed");
+                return ResponseEntity.ok(new VerifyAccountResponse(true, "Account verified successfully"));
             }
-        } catch (CognitoIdentityProviderException e) {
-            System.err.println(e.awsErrorDetails().errorMessage());
-            return new VerifyAccountResponse(false, e.awsErrorDetails().errorMessage());
+            return ResponseEntity.status(400).body(new VerifyAccountResponse(false, "Account verification failed"));
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            return ResponseEntity.status(400).body(new VerifyAccountResponse(false, e.getMessage()));
         }
     }
 
-    public SignInResponse signIn(UserSignIn userSignIn) {
+    public ResponseEntity<SignInResponse> signIn(UserSignIn userSignIn) {
 
         final Map<String, String> authParams = new HashMap<>();
         authParams.put("USERNAME", userSignIn.getEmail());
@@ -71,13 +70,11 @@ public class UserService {
                     .userPoolId(userPoolId)
                     .authParameters(authParams)
                     .build();
-
             AdminInitiateAuthResponse result = cognitoClient.adminInitiateAuth(authRequest);
-            return new SignInResponse(result.authenticationResult().idToken(), result.authenticationResult().accessToken());
-
-        } catch (CognitoIdentityProviderException e) {
-            System.err.println(e.awsErrorDetails().errorMessage());
-            return new SignInResponse(null, null, e.awsErrorDetails().errorMessage());
+            return ResponseEntity.ok(new SignInResponse(result.authenticationResult().idToken(), result.authenticationResult().accessToken()));
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            return ResponseEntity.status(400).body(new SignInResponse(null, null, e.getMessage()));
         }
     }
 
@@ -90,42 +87,30 @@ public class UserService {
         return new StatusResponse(response.sdkHttpResponse().isSuccessful());
     }
 
-    public ChangePasswordResponse changeTempPassword(String accessToken, String oldPassword, String newPassword) {
+    public ResponseEntity<ChangePasswordResponse> changeTempPassword(String accessToken, String oldPassword, String newPassword) {
         try {
             WrappedUser wrappedUser = authFacade.getWrappedUser(accessToken);
             String cognitoUsername = authFacade.getCognitoUsername(wrappedUser);
             String email = authFacade.getEmail(wrappedUser);
-            String role = authFacade.getRole(wrappedUser);
 
-            if (role.equals("CUSTOMER")) {
-                SignInResponse signInResponse = signIn(new UserSignIn(email, oldPassword));
-                if (signInResponse.getAccessToken() == null) {
-                    throw new Exception("Invalid old password");
-                }
-            } else if (role.equals("SELLER")) {
-                throw new Exception("Not implemented");
-            } else if (role.equals("COURIER")) {
-                throw new Exception("Not implemented");
-            } else {
-                throw new Exception("Invalid role");
+            SignInResponse signInResponse = signIn(new UserSignIn(email, oldPassword)).getBody();
+            if (signInResponse == null || signInResponse.getAccessToken() == null) {
+                throw new Exception("Invalid old password");
             }
-
             AdminSetUserPasswordRequest passwordRequest = AdminSetUserPasswordRequest.builder()
                     .username(cognitoUsername)
                     .userPoolId(userPoolId)
                     .password(newPassword)
                     .permanent(true)
                     .build();
-
             AdminSetUserPasswordResponse response = cognitoClient.adminSetUserPassword(passwordRequest);
             if (response.sdkHttpResponse().isSuccessful()) {
-                return new ChangePasswordResponse(true);
-            } else {
-                return new ChangePasswordResponse(false, "Failed to change password");
+                return ResponseEntity.ok(new ChangePasswordResponse(true, "Password changed successfully"));
             }
+            return ResponseEntity.status(400).body(new ChangePasswordResponse(false, "Failed to change password"));
         } catch (Exception e) {
             System.out.println(e.getMessage());
-            return new ChangePasswordResponse(false, e.getMessage());
+            return ResponseEntity.status(400).body(new ChangePasswordResponse(false, e.getMessage()));
         }
     }
 }

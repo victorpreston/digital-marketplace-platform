@@ -1,0 +1,63 @@
+
+POST /auth/sign-up/customer
+{
+    "name": "Sharada Weerasinghe",
+    "email": "sharadashehan6@gmail.com",
+	"password": "Key@1234",
+    "contactNumber": "+94781748749",
+    "address": "No.142, Samagi Mawatha, Bemmulla"
+}
+
+POST /auth/sign-up/seller
+{
+    "name": "IT Corp",
+    "email": "sharadaw.21@cse.mrt.ac.lk",
+    "password": "Key@1234",
+    "contactNumber": "+94781748749",
+    "address": "No.34, Kirulapona Road, Colombo"
+}
+
+POST /auth/sign-up/courier
+{
+    "name": "Speedo Delivery",
+    "email": "weerasinghemss.21@uom.lk",
+    "password": "Key@1234",
+    "contactNumber": "+94781748749"
+}
+
+GET /auth/verify-account?email=sharadashehan6@gmail.com&code=975195
+
+POST /auth/sign-in
+{
+"email": "sharadaw.21@cse.mrt.ac.lk",
+"password": "Key@1234"
+}
+
+GET /customer/account
+GET /seller/account
+GET /courier/account
+
+PATCH /customer/account
+{
+    "name": "Sharada Shehan Weerasinghe"
+}
+
+PATCH /seller/account
+{
+    "name": "IT Corporation"
+}
+
+PATCH /courier/account
+{
+    "contactNumber": "+94781748748"
+}
+
+GET /open/sellers/{id}
+GET /open/couriers/{id}
+
+POST /user/change-password
+{
+    "newPassword": "Key@1234",
+    "oldPassword": "Apple@1234"
+}
+
