@@ -32,7 +32,13 @@ public class SecurityConfiguration {
                         .requestMatchers("/open/**").permitAll()
                 )
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/customers/**").hasAuthority("ROLE_CUSTOMER")
+                        .requestMatchers("/customer/**").hasAuthority("ROLE_CUSTOMER")
+                )
+                .authorizeHttpRequests(authorize -> authorize
+                        .requestMatchers("/courier/**").hasAuthority("ROLE_COURIER")
+                )
+                .authorizeHttpRequests(authorize -> authorize
+                        .requestMatchers("/seller/**").hasAuthority("ROLE_SELLER")
                 )
                 .authorizeHttpRequests(authorize -> authorize
                         .anyRequest().authenticated()

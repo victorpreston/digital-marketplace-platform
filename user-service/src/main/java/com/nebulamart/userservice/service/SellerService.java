@@ -2,6 +2,7 @@ package com.nebulamart.userservice.service;
 
 import com.nebulamart.userservice.entity.Seller;
 import com.nebulamart.userservice.template.SellerSignUp;
+import com.nebulamart.userservice.template.SellerUpdate;
 import com.nebulamart.userservice.util.AuthFacade;
 import com.nebulamart.userservice.util.SecretHash;
 import com.nebulamart.userservice.util.WrappedUser;
@@ -80,6 +81,36 @@ public class SellerService {
         try {
             WrappedUser wrappedUser = authFacade.getWrappedUser(accessToken);
             return (Seller) authFacade.getUser(wrappedUser);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public Seller updateSellerDetails(String accessToken, SellerUpdate sellerUpdate) {
+        try {
+            WrappedUser wrappedUser = authFacade.getWrappedUser(accessToken);
+            Seller seller = (Seller) authFacade.getUser(wrappedUser);
+            if (seller != null) {
+                if (sellerUpdate.getName() != null) {
+                    seller.setName(sellerUpdate.getName());
+                }
+                if (sellerUpdate.getContactNumber() != null) {
+                    seller.setContactNumber(sellerUpdate.getContactNumber());
+                }
+                if (sellerUpdate.getAddress() != null) {
+                    seller.setAddress(sellerUpdate.getAddress());
+                }
+                if (sellerUpdate.getLogoUrl() != null) {
+                    seller.setLogoUrl(sellerUpdate.getLogoUrl());
+                }
+                DynamoDbEnhancedClient enhancedClient = DynamoDbEnhancedClient.builder()
+                        .dynamoDbClient(dynamoDbClient)
+                        .build();
+                DynamoDbTable<Seller> sellerTable = enhancedClient.table("Seller", TableSchema.fromBean(Seller.class));
+                sellerTable.putItem(seller);
+                return seller;
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }

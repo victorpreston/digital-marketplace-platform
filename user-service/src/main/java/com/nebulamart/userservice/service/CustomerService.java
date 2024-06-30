@@ -87,4 +87,31 @@ public class CustomerService {
         return null;
     }
 
+    public Customer updateCustomerDetails(String accessToken, CustomerUpdate customerUpdate) {
+        try {
+            WrappedUser wrappedUser = authFacade.getWrappedUser(accessToken);
+            Customer customer = (Customer) authFacade.getUser(wrappedUser);
+            if (customer != null) {
+                if (customerUpdate.getName() != null) {
+                    customer.setName(customerUpdate.getName());
+                }
+                if (customerUpdate.getContactNumber() != null) {
+                    customer.setContactNumber(customerUpdate.getContactNumber());
+                }
+                if (customerUpdate.getAddress() != null) {
+                    customer.setAddress(customerUpdate.getAddress());
+                }
+                DynamoDbEnhancedClient enhancedClient = DynamoDbEnhancedClient.builder()
+                        .dynamoDbClient(dynamoDbClient)
+                        .build();
+                DynamoDbTable<Customer> customerTable = enhancedClient.table("Customer", TableSchema.fromBean(Customer.class));
+                customerTable.putItem(customer);
+                return customer;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
 }
