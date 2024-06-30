@@ -12,10 +12,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
-import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
-import software.amazon.awssdk.enhanced.dynamodb.Key;
-import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
+import software.amazon.awssdk.enhanced.dynamodb.*;
+import software.amazon.awssdk.enhanced.dynamodb.model.PageIterable;
 import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AttributeType;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.SignUpRequest;
@@ -23,6 +21,8 @@ import software.amazon.awssdk.services.cognitoidentityprovider.model.SignUpRespo
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import java.util.ArrayList;
 import java.util.List;
+
+import static software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional.keyEqualTo;
 
 @Service
 public class CourierService {
@@ -135,6 +135,24 @@ public class CourierService {
         } catch (Exception e) {
             System.out.println(e.getMessage());
             return null;
+        }
+    }
+
+    public ResponseEntity<List<Courier>> getCouriers() {
+        try {
+            DynamoDbEnhancedClient enhancedClient = DynamoDbEnhancedClient.builder()
+                    .dynamoDbClient(dynamoDbClient)
+                    .build();
+            DynamoDbTable<Courier> courierTable = enhancedClient.table("Courier", TableSchema.fromBean(Courier.class));
+            PageIterable<Courier> couriers = courierTable.scan();
+            List<Courier> courierList = new ArrayList<>();
+            for (Courier courier : couriers.items()) {
+                courierList.add(courier);
+            }
+            return ResponseEntity.ok(courierList);
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            return ResponseEntity.status(400).body(null);
         }
     }
 
