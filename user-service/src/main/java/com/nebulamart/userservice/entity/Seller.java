@@ -19,8 +19,6 @@ public class Seller extends User {
     private String contactNumber;
     private String address;
     private String logoUrl;
-    private float rating;
-    private int ratingCount;
 
     @DynamoDbPartitionKey
     public String getId() {
