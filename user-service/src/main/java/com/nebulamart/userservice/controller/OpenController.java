@@ -42,19 +42,27 @@ public class OpenController {
     }
 
     @RequestMapping("/sellers/{id}")
-    public Seller getSellerDetails(@PathVariable("id") String id) {
+    public ResponseEntity<Seller> getSellerDetails(@PathVariable("id") String id) {
         if (id == null) {
-            return null;
+            return ResponseEntity.status(400).body(null);
         }
-        return sellerService.getSeller(id);
+        Seller seller = sellerService.getSeller(id);
+        if (seller == null) {
+            return ResponseEntity.status(404).body(null);
+        }
+        return ResponseEntity.ok(seller);
     }
 
     @RequestMapping("/couriers/{id}")
-    public Courier getCourierDetails(@PathVariable("id") String id) {
+    public ResponseEntity<Courier> getCourierDetails(@PathVariable("id") String id) {
         if (id == null) {
-            return null;
+            return ResponseEntity.status(400).body(null);
         }
-        return courierService.getCourier(id);
+        Courier courier = courierService.getCourier(id);
+        if (courier == null) {
+            return ResponseEntity.status(404).body(null);
+        }
+        return ResponseEntity.ok(courier);
     }
 
 }
