@@ -2,6 +2,7 @@ package com.nebulamart.userservice.service;
 
 import com.nebulamart.userservice.entity.Courier;
 import com.nebulamart.userservice.template.CourierSignUp;
+import com.nebulamart.userservice.template.CourierUpdate;
 import com.nebulamart.userservice.util.AuthFacade;
 import com.nebulamart.userservice.util.SecretHash;
 import com.nebulamart.userservice.util.WrappedUser;
@@ -88,4 +89,32 @@ public class CourierService {
         }
         return null;
     }
+
+    public Courier updateCourierDetails(String accessToken, CourierUpdate courierUpdate) {
+        try {
+            WrappedUser wrappedUser = authFacade.getWrappedUser(accessToken);
+            Courier courier = (Courier) authFacade.getUser(wrappedUser);
+            if (courier != null) {
+                if (courierUpdate.getName() != null) {
+                    courier.setName(courierUpdate.getName());
+                }
+                if (courierUpdate.getContactNumber() != null) {
+                    courier.setContactNumber(courierUpdate.getContactNumber());
+                }
+                if (courierUpdate.getLogoUrl() != null) {
+                    courier.setLogoUrl(courierUpdate.getLogoUrl());
+                }
+                DynamoDbEnhancedClient enhancedClient = DynamoDbEnhancedClient.builder()
+                        .dynamoDbClient(dynamoDbClient)
+                        .build();
+                DynamoDbTable<Courier> courierTable = enhancedClient.table("Courier", TableSchema.fromBean(Courier.class));
+                courierTable.putItem(courier);
+                return courier;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
 }
