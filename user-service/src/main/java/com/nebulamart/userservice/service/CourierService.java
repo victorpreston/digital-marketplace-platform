@@ -2,15 +2,19 @@ package com.nebulamart.userservice.service;
 
 import com.nebulamart.userservice.entity.Courier;
 import com.nebulamart.userservice.template.CourierSignUp;
+import com.nebulamart.userservice.template.CourierSignUpResponse;
 import com.nebulamart.userservice.template.CourierUpdate;
+import com.nebulamart.userservice.template.CourierUpdateResponse;
 import com.nebulamart.userservice.util.AuthFacade;
 import com.nebulamart.userservice.util.SecretHash;
 import com.nebulamart.userservice.util.WrappedUser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
+import software.amazon.awssdk.enhanced.dynamodb.Key;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
 import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AttributeType;
@@ -42,7 +46,7 @@ public class CourierService {
         this.authFacade = authFacade;
     }
 
-    public Courier courierSignUp(CourierSignUp courierSignUp) {
+    public ResponseEntity<CourierSignUpResponse> courierSignUp(CourierSignUp courierSignUp) {
 
         DynamoDbEnhancedClient enhancedClient = DynamoDbEnhancedClient.builder()
                 .dynamoDbClient(dynamoDbClient)
@@ -72,25 +76,25 @@ public class CourierService {
 
             DynamoDbTable<Courier> courierTable = enhancedClient.table("Courier", TableSchema.fromBean(Courier.class));
             courierTable.putItem(courier);
-            return courier;
+            return ResponseEntity.ok(new CourierSignUpResponse(courier));
 
         } catch (Exception e) {
-            e.printStackTrace();
-            return null;
+            System.out.println(e.getMessage());
+            return ResponseEntity.status(400).body(new CourierSignUpResponse(null, e.getMessage()));
         }
     }
 
-    public Courier getCourierDetails(String accessToken) {
+    public ResponseEntity<Courier> getCourierDetails(String accessToken) {
         try {
             WrappedUser wrappedUser = authFacade.getWrappedUser(accessToken);
-            return (Courier) authFacade.getUser(wrappedUser);
+            return ResponseEntity.ok((Courier) authFacade.getUser(wrappedUser));
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
+            return ResponseEntity.status(400).body(null);
         }
-        return null;
     }
 
-    public Courier updateCourierDetails(String accessToken, CourierUpdate courierUpdate) {
+    public ResponseEntity<CourierUpdateResponse> updateCourierDetails(String accessToken, CourierUpdate courierUpdate) {
         try {
             WrappedUser wrappedUser = authFacade.getWrappedUser(accessToken);
             Courier courier = (Courier) authFacade.getUser(wrappedUser);
@@ -109,12 +113,29 @@ public class CourierService {
                         .build();
                 DynamoDbTable<Courier> courierTable = enhancedClient.table("Courier", TableSchema.fromBean(Courier.class));
                 courierTable.putItem(courier);
-                return courier;
+                return ResponseEntity.ok(new CourierUpdateResponse(courier));
             }
+            return ResponseEntity.status(400).body(new CourierUpdateResponse(null, "Courier not found"));
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
+            return ResponseEntity.status(400).body(new CourierUpdateResponse(null, e.getMessage()));
         }
-        return null;
+    }
+
+    public Courier getCourier(String id) {
+        try {
+            DynamoDbEnhancedClient enhancedClient = DynamoDbEnhancedClient.builder()
+                    .dynamoDbClient(dynamoDbClient)
+                    .build();
+            Key key = Key.builder()
+                    .partitionValue(id)
+                    .build();
+            DynamoDbTable<Courier> courierTable = enhancedClient.table("Courier", TableSchema.fromBean(Courier.class));
+            return courierTable.getItem(r -> r.key(key));
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            return null;
+        }
     }
 
 }

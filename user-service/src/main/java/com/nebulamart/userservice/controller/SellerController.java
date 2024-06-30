@@ -20,11 +20,11 @@ public class SellerController {
 
     @GetMapping("/account")
     public ResponseEntity<Seller> getSellerDetails(@RequestHeader("Authorization") String accessToken) {
-        Seller seller = sellerService.getSellerDetails(accessToken);
-        if (seller == null) {
-            return ResponseEntity.status(404).build();
+        ResponseEntity<Seller> responseEntity = sellerService.getSellerDetails(accessToken);
+        if (responseEntity == null) {
+            return ResponseEntity.status(400).body(null);
         }
-        return ResponseEntity.ok(seller);
+        return responseEntity;
     }
 
     @PatchMapping("/account")
@@ -32,11 +32,11 @@ public class SellerController {
         if (!sellerUpdate.isValid()) {
             return ResponseEntity.status(400).body(new SellerUpdateResponse(null, "Missing required fields"));
         }
-        Seller updatedSeller = sellerService.updateSellerDetails(accessToken, sellerUpdate);
-        if (updatedSeller == null) {
+        ResponseEntity<SellerUpdateResponse> responseEntity = sellerService.updateSellerDetails(accessToken, sellerUpdate);
+        if (responseEntity == null) {
             return ResponseEntity.status(400).body(new SellerUpdateResponse(null, "Update failed"));
         }
-        return ResponseEntity.ok(new SellerUpdateResponse(updatedSeller));
+        return responseEntity;
     }
 
 }

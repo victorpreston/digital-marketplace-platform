@@ -20,11 +20,11 @@ public class CourierController {
 
     @GetMapping("/account")
     public ResponseEntity<Courier> getCourierDetails(@RequestHeader("Authorization") String accessToken) {
-        Courier courier = courierService.getCourierDetails(accessToken);
-        if (courier == null) {
-            return ResponseEntity.status(404).build();
+        ResponseEntity<Courier> responseEntity = courierService.getCourierDetails(accessToken);
+        if (responseEntity == null) {
+            return ResponseEntity.status(400).body(null);
         }
-        return ResponseEntity.ok(courier);
+        return responseEntity;
     }
 
     @PatchMapping("/account")
@@ -32,11 +32,11 @@ public class CourierController {
         if (!courierUpdate.isValid()) {
             return ResponseEntity.status(400).body(new CourierUpdateResponse(null, "Missing required fields"));
         }
-        Courier updatedCourier = courierService.updateCourierDetails(accessToken, courierUpdate);
-        if (updatedCourier == null) {
+        ResponseEntity<CourierUpdateResponse> responseEntity = courierService.updateCourierDetails(accessToken, courierUpdate);
+        if (responseEntity == null) {
             return ResponseEntity.status(400).body(new CourierUpdateResponse(null, "Update failed"));
         }
-        return ResponseEntity.ok(new CourierUpdateResponse(updatedCourier));
+        return responseEntity;
     }
 
 }
