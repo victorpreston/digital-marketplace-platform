@@ -12,7 +12,7 @@
 	<artifactId>service-registry</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>service-registry</name>
-	<description>Demo project for Spring Boot</description>
+	<description>Service Registry for NebulaMart</description>
 	<url/>
 	<licenses>
 		<license/>
