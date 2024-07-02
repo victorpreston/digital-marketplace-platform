@@ -1,5 +1,5 @@
 
-POST /auth/sign-up/customer
+POST /api/user-service/auth/sign-up/customer
 {
     "name": "Sharada Weerasinghe",
     "email": "sharadashehan6@gmail.com",
@@ -8,7 +8,7 @@ POST /auth/sign-up/customer
     "address": "No.142, Samagi Mawatha, Bemmulla"
 }
 
-POST /auth/sign-up/seller
+POST /api/user-service/auth/sign-up/seller
 {
     "name": "IT Corp",
     "email": "sharadaw.21@cse.mrt.ac.lk",
@@ -17,7 +17,7 @@ POST /auth/sign-up/seller
     "address": "No.34, Kirulapona Road, Colombo"
 }
 
-POST /auth/sign-up/courier
+POST /api/user-service/auth/sign-up/courier
 {
     "name": "Speedo Delivery",
     "email": "weerasinghemss.21@uom.lk",
@@ -25,39 +25,41 @@ POST /auth/sign-up/courier
     "contactNumber": "+94781748749"
 }
 
-GET /auth/verify-account?email=sharadashehan6@gmail.com&code=975195
+GET /api/user-service/auth/verify-account?email=sharadashehan6@gmail.com&code=975195
 
-POST /auth/sign-in
+POST /api/user-service/auth/sign-in
 {
 "email": "sharadaw.21@cse.mrt.ac.lk",
 "password": "Key@1234"
 }
 
-GET /customer/account
-GET /seller/account
-GET /courier/account
+GET /api/user-service/customer/account
+GET /api/user-service/seller/account
+GET /api/user-service/courier/account
 
-PATCH /customer/account
+PATCH /api/user-service/customer/account
 {
     "name": "Sharada Shehan Weerasinghe"
 }
 
-PATCH /seller/account
+PATCH /api/user-service/seller/account
 {
     "name": "IT Corporation"
 }
 
-PATCH /courier/account
+PATCH /api/user-service/courier/account
 {
     "contactNumber": "+94781748748"
 }
 
-GET /open/sellers/{id}
-GET /open/couriers/{id}
+GET /api/user-service/open/sellers/{id}
+GET /api/user-service/open/couriers/{id}
 
 POST /user/change-password
 {
     "newPassword": "Key@1234",
     "oldPassword": "Apple@1234"
 }
+
+GET /api/user-service/seller/couriers
 

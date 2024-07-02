@@ -69,7 +69,7 @@ public class SellerService {
 
             SignUpResponse result = cognitoClient.signUp(signUpRequest);
             String userId = result.userSub();
-            Seller seller = new Seller(userId, sellerSignUp.getName(), sellerSignUp.getEmail(), sellerSignUp.getContactNumber(), sellerSignUp.getAddress(), sellerSignUp.getLogoUrl(), 0, 0);
+            Seller seller = new Seller(userId, sellerSignUp.getName(), sellerSignUp.getEmail(), sellerSignUp.getContactNumber(), sellerSignUp.getAddress(), sellerSignUp.getLogoUrl());
 
             DynamoDbTable<Seller> sellerTable = enhancedClient.table("Seller", TableSchema.fromBean(Seller.class));
             sellerTable.putItem(seller);
