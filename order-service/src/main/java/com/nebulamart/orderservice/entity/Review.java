@@ -1,4 +1,4 @@
-package com.nebulamart.productservice.entity;
+package com.nebulamart.orderservice.entity;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

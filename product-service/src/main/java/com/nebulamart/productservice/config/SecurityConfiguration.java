@@ -25,20 +25,20 @@ public class SecurityConfiguration {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
+//                .authorizeHttpRequests(authorize -> authorize
+//                        .requestMatchers("/auth/**").permitAll()
+//                )
+//                .authorizeHttpRequests(authorize -> authorize
+//                        .requestMatchers("/open/**").permitAll()
+//                )
+//                .authorizeHttpRequests(authorize -> authorize
+//                        .requestMatchers("/customer/**").hasAuthority("ROLE_CUSTOMER")
+//                )
+//                .authorizeHttpRequests(authorize -> authorize
+//                        .requestMatchers("/courier/**").hasAuthority("ROLE_COURIER")
+//                )
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/auth/**").permitAll()
-                )
-                .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/open/**").permitAll()
-                )
-                .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/customer/**").hasAuthority("ROLE_CUSTOMER")
-                )
-                .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/courier/**").hasAuthority("ROLE_COURIER")
-                )
-                .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/seller/**").hasAuthority("ROLE_SELLER")
+                        .requestMatchers("/products/**").permitAll()
                 )
                 .authorizeHttpRequests(authorize -> authorize
                         .anyRequest().authenticated()
