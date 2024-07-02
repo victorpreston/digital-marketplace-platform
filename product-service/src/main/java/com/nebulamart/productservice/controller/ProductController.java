@@ -17,7 +17,7 @@ public class ProductController {
 
     @GetMapping("/user")
     public Seller getUser() {
-        Seller seller = restTemplate.getForObject("http://localhost:9002/api/user-service/open/sellers/a4c8c4e8-9071-7028-779e-6c84a274539a", Seller.class);
+        Seller seller = restTemplate.getForObject("http://USER-SERVICE/api/user-service/open/sellers/a4c8c4e8-9071-7028-779e-6c84a274539a", Seller.class);
         return seller;
     }
 
