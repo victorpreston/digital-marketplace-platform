@@ -9,23 +9,16 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
-import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
 import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.*;
-import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import java.util.*;
 
 @Service
 public class CustomerService {
-
     private final CognitoIdentityProviderClient cognitoClient;
-    private final DynamoDbClient dynamoDbClient;
+    private final DynamoDbTable<Customer> customerTable;
     private final AuthFacade authFacade;
-
-    @Value("${aws-cognito.user-pool-id}")
-    private String userPoolId;
 
     @Value("${aws-cognito.user-pool-client-id}")
     private String clientId;
@@ -34,44 +27,29 @@ public class CustomerService {
     private String clientSecret;
 
     @Autowired
-    public CustomerService(CognitoIdentityProviderClient cognitoClient, DynamoDbClient dynamoDbClient, AuthFacade authFacade) {
+    public CustomerService(CognitoIdentityProviderClient cognitoClient, DynamoDbTable<Customer> customerTable, AuthFacade authFacade) {
         this.cognitoClient = cognitoClient;
-        this.dynamoDbClient = dynamoDbClient;
+        this.customerTable = customerTable;
         this.authFacade = authFacade;
     }
 
     public ResponseEntity<CustomerSignUpResponse> customerSignUp(CustomerSignUp customerSignUp) {
-
-        DynamoDbEnhancedClient enhancedClient = DynamoDbEnhancedClient.builder()
-                .dynamoDbClient(dynamoDbClient)
-                .build();
-
-        AttributeType attributeRole = AttributeType.builder()
-                .name("custom:role")
-                .value("CUSTOMER")
-                .build();
-
-        List<AttributeType> attrs = new ArrayList<>();
-        attrs.add(attributeRole);
-
         try {
+            List<AttributeType> attrs = new ArrayList<>();
+            AttributeType attributeRole = AttributeType.builder().name("custom:role").value("CUSTOMER").build();
+            attrs.add(attributeRole);
             String secretVal = SecretHash.calculateSecretHash(clientId, clientSecret, customerSignUp.getEmail());
-            SignUpRequest signUpRequest = SignUpRequest.builder()
-                    .userAttributes(attrs)
-                    .username(customerSignUp.getEmail())
+            SignUpRequest signUpRequest = SignUpRequest.builder().userAttributes(attrs)
                     .clientId(clientId)
-                    .password(customerSignUp.getPassword())
                     .secretHash(secretVal)
+                    .username(customerSignUp.getEmail())
+                    .password(customerSignUp.getPassword())
                     .build();
-
             SignUpResponse result = cognitoClient.signUp(signUpRequest);
             String userId = result.userSub();
             Customer customer = new Customer(userId, customerSignUp.getName(), customerSignUp.getEmail(), customerSignUp.getContactNumber(), customerSignUp.getAddress());
-
-            DynamoDbTable<Customer> customerTable = enhancedClient.table("Customer", TableSchema.fromBean(Customer.class));
             customerTable.putItem(customer);
             return ResponseEntity.ok(new CustomerSignUpResponse(customer));
-
         } catch (Exception e) {
             System.out.println(e.getMessage());
             return ResponseEntity.status(400).body(new CustomerSignUpResponse(null, e.getMessage()));
@@ -102,10 +80,6 @@ public class CustomerService {
                 if (customerUpdate.getAddress() != null) {
                     customer.setAddress(customerUpdate.getAddress());
                 }
-                DynamoDbEnhancedClient enhancedClient = DynamoDbEnhancedClient.builder()
-                        .dynamoDbClient(dynamoDbClient)
-                        .build();
-                DynamoDbTable<Customer> customerTable = enhancedClient.table("Customer", TableSchema.fromBean(Customer.class));
                 customerTable.putItem(customer);
                 return ResponseEntity.ok(new CustomerUpdateResponse(customer));
             }
