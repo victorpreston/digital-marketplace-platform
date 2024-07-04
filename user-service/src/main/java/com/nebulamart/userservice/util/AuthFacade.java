@@ -7,17 +7,21 @@ import com.nebulamart.userservice.entity.Seller;
 import com.nebulamart.userservice.entity.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.enhanced.dynamodb.Key;
-import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
-import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 @Component
 public class AuthFacade {
+    private final DynamoDbTable<Customer> customerTable;
+    private final DynamoDbTable<Seller> sellerTable;
+    private final DynamoDbTable<Courier> courierTable;
 
     @Autowired
-    private DynamoDbClient dynamoDbClient;
+    public AuthFacade(DynamoDbTable<Customer> customerTable, DynamoDbTable<Seller> sellerTable, DynamoDbTable<Courier> courierTable) {
+        this.customerTable = customerTable;
+        this.sellerTable = sellerTable;
+        this.courierTable = courierTable;
+    }
 
     public WrappedUser getWrappedUser(String accessToken) throws JsonProcessingException {
         JwtParser jwtParser = new JwtParser(accessToken);
@@ -42,28 +46,14 @@ public class AuthFacade {
             return wrappedUser.getUser();
         }
         else {
-            DynamoDbEnhancedClient enhancedClient = DynamoDbEnhancedClient.builder()
-                    .dynamoDbClient(dynamoDbClient)
-                    .build();
             User responseUser = null;
+            Key userKey = Key.builder().partitionValue(wrappedUser.getCognitoUsername()).build();
             if (wrappedUser.getRole().equals("CUSTOMER")) {
-                DynamoDbTable<Customer> customerTable = enhancedClient.table("Customer", TableSchema.fromBean(Customer.class));
-                Key key = Key.builder()
-                        .partitionValue(wrappedUser.getCognitoUsername())
-                        .build();
-                responseUser = customerTable.getItem(r -> r.key(key));
+                responseUser = customerTable.getItem(r -> r.key(userKey));
             } else if (wrappedUser.getRole().equals("SELLER")) {
-                DynamoDbTable<Seller> sellerTable = enhancedClient.table("Seller", TableSchema.fromBean(Seller.class));
-                Key key = Key.builder()
-                        .partitionValue(wrappedUser.getCognitoUsername())
-                        .build();
-                responseUser = sellerTable.getItem(r -> r.key(key));
+                responseUser = sellerTable.getItem(r -> r.key(userKey));
             } else if (wrappedUser.getRole().equals("COURIER")) {
-                DynamoDbTable<Courier> courierTable = enhancedClient.table("Courier", TableSchema.fromBean(Courier.class));
-                Key key = Key.builder()
-                        .partitionValue(wrappedUser.getCognitoUsername())
-                        .build();
-                responseUser = courierTable.getItem(r -> r.key(key));
+                responseUser = courierTable.getItem(r -> r.key(userKey));
             }
             if (responseUser != null) {
                 wrappedUser.setUser(responseUser);

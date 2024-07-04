@@ -7,13 +7,11 @@ import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.core.user.OAuth2UserAuthority;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.*;
 import org.springframework.security.web.SecurityFilterChain;
-
 import java.util.*;
 
 @Configuration
@@ -26,12 +24,6 @@ public class SecurityConfiguration {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/auth/**").permitAll()
-                )
-                .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/open/**").permitAll()
-                )
-                .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/customer/**").hasAuthority("ROLE_CUSTOMER")
                 )
                 .authorizeHttpRequests(authorize -> authorize
@@ -39,6 +31,21 @@ public class SecurityConfiguration {
                 )
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/seller/**").hasAuthority("ROLE_SELLER")
+                )
+                .authorizeHttpRequests(authorize -> authorize
+                        .requestMatchers("/user/**").authenticated()
+                )
+                .authorizeHttpRequests(authorize -> authorize
+                        .requestMatchers("/auth/**").permitAll()
+                )
+                .authorizeHttpRequests(authorize -> authorize
+                        .requestMatchers("/sellers/**").permitAll()
+                )
+                .authorizeHttpRequests(authorize -> authorize
+                        .requestMatchers("/couriers/**").permitAll()
+                )
+                .authorizeHttpRequests(authorize -> authorize
+                        .requestMatchers("/upload-url").permitAll()
                 )
                 .authorizeHttpRequests(authorize -> authorize
                         .anyRequest().authenticated()

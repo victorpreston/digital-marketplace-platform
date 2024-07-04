@@ -18,20 +18,14 @@ import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityPr
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AttributeType;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.SignUpRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.SignUpResponse;
-import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import java.util.ArrayList;
 import java.util.List;
-
-import static software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional.keyEqualTo;
 
 @Service
 public class CourierService {
     private final CognitoIdentityProviderClient cognitoClient;
-    private final DynamoDbClient dynamoDbClient;
+    private final DynamoDbTable<Courier> courierTable;
     private final AuthFacade authFacade;
-
-    @Value("${aws-cognito.user-pool-id}")
-    private String userPoolId;
 
     @Value("${aws-cognito.user-pool-client-id}")
     private String clientId;
@@ -40,44 +34,29 @@ public class CourierService {
     private String clientSecret;
 
     @Autowired
-    public CourierService(CognitoIdentityProviderClient cognitoClient, DynamoDbClient dynamoDbClient, AuthFacade authFacade) {
+    public CourierService(CognitoIdentityProviderClient cognitoClient, DynamoDbTable<Courier> courierTable, AuthFacade authFacade) {
         this.cognitoClient = cognitoClient;
-        this.dynamoDbClient = dynamoDbClient;
+        this.courierTable = courierTable;
         this.authFacade = authFacade;
     }
 
     public ResponseEntity<CourierSignUpResponse> courierSignUp(CourierSignUp courierSignUp) {
-
-        DynamoDbEnhancedClient enhancedClient = DynamoDbEnhancedClient.builder()
-                .dynamoDbClient(dynamoDbClient)
-                .build();
-
-        AttributeType attributeRole = AttributeType.builder()
-                .name("custom:role")
-                .value("COURIER")
-                .build();
-
-        List<AttributeType> attrs = new ArrayList<>();
-        attrs.add(attributeRole);
-
         try {
+            List<AttributeType> attrs = new ArrayList<>();
+            AttributeType attributeRole = AttributeType.builder().name("custom:role").value("COURIER").build();
+            attrs.add(attributeRole);
             String secretVal = SecretHash.calculateSecretHash(clientId, clientSecret, courierSignUp.getEmail());
-            SignUpRequest signUpRequest = SignUpRequest.builder()
-                    .userAttributes(attrs)
-                    .username(courierSignUp.getEmail())
+            SignUpRequest signUpRequest = SignUpRequest.builder().userAttributes(attrs)
                     .clientId(clientId)
-                    .password(courierSignUp.getPassword())
                     .secretHash(secretVal)
+                    .username(courierSignUp.getEmail())
+                    .password(courierSignUp.getPassword())
                     .build();
-
             SignUpResponse result = cognitoClient.signUp(signUpRequest);
             String userId = result.userSub();
             Courier courier = new Courier(userId, courierSignUp.getName(), courierSignUp.getEmail(), courierSignUp.getContactNumber(), courierSignUp.getLogoUrl(), 0, 0);
-
-            DynamoDbTable<Courier> courierTable = enhancedClient.table("Courier", TableSchema.fromBean(Courier.class));
             courierTable.putItem(courier);
             return ResponseEntity.ok(new CourierSignUpResponse(courier));
-
         } catch (Exception e) {
             System.out.println(e.getMessage());
             return ResponseEntity.status(400).body(new CourierSignUpResponse(null, e.getMessage()));
@@ -108,14 +87,10 @@ public class CourierService {
                 if (courierUpdate.getLogoUrl() != null) {
                     courier.setLogoUrl(courierUpdate.getLogoUrl());
                 }
-                DynamoDbEnhancedClient enhancedClient = DynamoDbEnhancedClient.builder()
-                        .dynamoDbClient(dynamoDbClient)
-                        .build();
-                DynamoDbTable<Courier> courierTable = enhancedClient.table("Courier", TableSchema.fromBean(Courier.class));
                 courierTable.putItem(courier);
                 return ResponseEntity.ok(new CourierUpdateResponse(courier));
             }
-            return ResponseEntity.status(400).body(new CourierUpdateResponse(null, "Courier not found"));
+            return ResponseEntity.status(401).body(new CourierUpdateResponse(null, "Unauthorized"));
         } catch (Exception e) {
             System.out.println(e.getMessage());
             return ResponseEntity.status(400).body(new CourierUpdateResponse(null, e.getMessage()));
@@ -124,13 +99,7 @@ public class CourierService {
 
     public Courier getCourier(String id) {
         try {
-            DynamoDbEnhancedClient enhancedClient = DynamoDbEnhancedClient.builder()
-                    .dynamoDbClient(dynamoDbClient)
-                    .build();
-            Key key = Key.builder()
-                    .partitionValue(id)
-                    .build();
-            DynamoDbTable<Courier> courierTable = enhancedClient.table("Courier", TableSchema.fromBean(Courier.class));
+            Key key = Key.builder().partitionValue(id).build();
             return courierTable.getItem(r -> r.key(key));
         } catch (Exception e) {
             System.out.println(e.getMessage());
@@ -140,12 +109,8 @@ public class CourierService {
 
     public ResponseEntity<List<Courier>> getCouriers() {
         try {
-            DynamoDbEnhancedClient enhancedClient = DynamoDbEnhancedClient.builder()
-                    .dynamoDbClient(dynamoDbClient)
-                    .build();
-            DynamoDbTable<Courier> courierTable = enhancedClient.table("Courier", TableSchema.fromBean(Courier.class));
-            PageIterable<Courier> couriers = courierTable.scan();
             List<Courier> courierList = new ArrayList<>();
+            PageIterable<Courier> couriers = courierTable.scan();
             for (Courier courier : couriers.items()) {
                 courierList.add(courier);
             }

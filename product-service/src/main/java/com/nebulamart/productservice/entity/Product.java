@@ -6,6 +6,8 @@ import lombok.NoArgsConstructor;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
 
+import java.util.List;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -16,8 +18,8 @@ public class Product {
     private String name;
     private String description;
     private String brand;
-    private String imageUrl;
-    private Category category;
+    private List<String> imageUrls;
+    private String category;
 
     private int stock;
     private float basePrice;
@@ -28,7 +30,7 @@ public class Product {
     private String sellerId;
     private String courierId;
     private String contractId;
-    private ProductStatus status;
+    private String status;
 
     @DynamoDbPartitionKey
     public String getId() {

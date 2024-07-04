@@ -11,7 +11,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.*;
-import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -31,20 +30,19 @@ public class UserService {
     private String clientSecret;
 
     @Autowired
-    public UserService(CognitoIdentityProviderClient cognitoClient, DynamoDbClient dynamoDbClient, AuthFacade authFacade, CustomerService customerService) {
+    public UserService(CognitoIdentityProviderClient cognitoClient, AuthFacade authFacade, CustomerService customerService) {
         this.cognitoClient = cognitoClient;
         this.authFacade = authFacade;
     }
 
     public ResponseEntity<VerifyAccountResponse> confirmSignUp(String email, String confirmationCode) {
-
-        ConfirmSignUpRequest req = ConfirmSignUpRequest.builder()
-                .clientId(clientId)
-                .secretHash(SecretHash.calculateSecretHash(clientId, clientSecret, email))
-                .confirmationCode(confirmationCode)
-                .username(email)
-                .build();
         try {
+            ConfirmSignUpRequest req = ConfirmSignUpRequest.builder()
+                    .clientId(clientId)
+                    .secretHash(SecretHash.calculateSecretHash(clientId, clientSecret, email))
+                    .confirmationCode(confirmationCode)
+                    .username(email)
+                    .build();
             ConfirmSignUpResponse response = cognitoClient.confirmSignUp(req);
             if (response.sdkHttpResponse().isSuccessful()) {
                 return ResponseEntity.ok(new VerifyAccountResponse(true, "Account verified successfully"));
@@ -57,13 +55,11 @@ public class UserService {
     }
 
     public ResponseEntity<SignInResponse> signIn(UserSignIn userSignIn) {
-
-        final Map<String, String> authParams = new HashMap<>();
-        authParams.put("USERNAME", userSignIn.getEmail());
-        authParams.put("PASSWORD", userSignIn.getPassword());
-        authParams.put("SECRET_HASH", SecretHash.calculateSecretHash(clientId, clientSecret, userSignIn.getEmail()));
-
         try {
+            final Map<String, String> authParams = new HashMap<>();
+            authParams.put("USERNAME", userSignIn.getEmail());
+            authParams.put("PASSWORD", userSignIn.getPassword());
+            authParams.put("SECRET_HASH", SecretHash.calculateSecretHash(clientId, clientSecret, userSignIn.getEmail()));
             final AdminInitiateAuthRequest authRequest = AdminInitiateAuthRequest.builder()
                     .authFlow(AuthFlowType.ADMIN_USER_PASSWORD_AUTH)
                     .clientId(clientId)
@@ -78,13 +74,16 @@ public class UserService {
         }
     }
 
-    public StatusResponse signOut(String accessToken) {
-        GlobalSignOutRequest signOutRequest = GlobalSignOutRequest.builder()
-                .accessToken(accessToken)
-                .build();
-
-        GlobalSignOutResponse response = cognitoClient.globalSignOut(signOutRequest);
-        return new StatusResponse(response.sdkHttpResponse().isSuccessful());
+    public ResponseEntity<StatusResponse> signOut(String bearerHeader) {
+        try {
+            String accessToken = bearerHeader.split(" ")[1];
+            GlobalSignOutRequest signOutRequest = GlobalSignOutRequest.builder().accessToken(accessToken).build();
+            GlobalSignOutResponse response = cognitoClient.globalSignOut(signOutRequest);
+            return ResponseEntity.ok(new StatusResponse(response.sdkHttpResponse().isSuccessful()));
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            return ResponseEntity.status(400).body(new StatusResponse(false));
+        }
     }
 
     public ResponseEntity<ChangePasswordResponse> changeTempPassword(String accessToken, String oldPassword, String newPassword) {

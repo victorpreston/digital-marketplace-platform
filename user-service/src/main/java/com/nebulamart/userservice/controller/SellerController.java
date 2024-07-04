@@ -45,7 +45,7 @@ public class SellerController {
         return responseEntity;
     }
 
-    @GetMapping("/couriers")
+    @GetMapping("/couriers-list")
     public ResponseEntity<List<Courier>> searchCouriers() {
         ResponseEntity<List<Courier>> responseEntity = courierService.getCouriers();
         if (responseEntity == null) {

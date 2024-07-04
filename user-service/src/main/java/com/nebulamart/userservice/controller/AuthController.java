@@ -1,8 +1,5 @@
 package com.nebulamart.userservice.controller;
 
-import com.nebulamart.userservice.entity.Courier;
-import com.nebulamart.userservice.entity.Customer;
-import com.nebulamart.userservice.entity.Seller;
 import com.nebulamart.userservice.service.*;
 import com.nebulamart.userservice.template.*;
 import org.springframework.http.ResponseEntity;
@@ -13,7 +10,6 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
-
     private final CustomerService customerService;
     private final SellerService sellerService;
     private final CourierService courierService;

@@ -12,20 +12,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.enhanced.dynamodb.Key;
-import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
 import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.*;
-import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import java.util.ArrayList;
 import java.util.List;
 
 @Service
 public class SellerService {
     private final CognitoIdentityProviderClient cognitoClient;
-    private final DynamoDbClient dynamoDbClient;
+    private final DynamoDbTable<Seller> sellerTable;
     private final AuthFacade authFacade;
 
     @Value("${aws-cognito.user-pool-id}")
@@ -38,26 +35,17 @@ public class SellerService {
     private String clientSecret;
 
     @Autowired
-    public SellerService(CognitoIdentityProviderClient cognitoClient, DynamoDbClient dynamoDbClient, AuthFacade authFacade) {
+    public SellerService(CognitoIdentityProviderClient cognitoClient, DynamoDbTable<Seller> sellerTable, AuthFacade authFacade) {
         this.cognitoClient = cognitoClient;
-        this.dynamoDbClient = dynamoDbClient;
+        this.sellerTable = sellerTable;
         this.authFacade = authFacade;
     }
 
     public ResponseEntity<SellerSignUpResponse> sellerSignUp(SellerSignUp sellerSignUp) {
-        DynamoDbEnhancedClient enhancedClient = DynamoDbEnhancedClient.builder()
-                .dynamoDbClient(dynamoDbClient)
-                .build();
-
-        AttributeType attributeRole = AttributeType.builder()
-                .name("custom:role")
-                .value("SELLER")
-                .build();
-
-        List<AttributeType> attrs = new ArrayList<>();
-        attrs.add(attributeRole);
-
         try {
+            AttributeType attributeRole = AttributeType.builder().name("custom:role").value("SELLER").build();
+            List<AttributeType> attrs = new ArrayList<>();
+            attrs.add(attributeRole);
             String secretVal = SecretHash.calculateSecretHash(clientId, clientSecret, sellerSignUp.getEmail());
             SignUpRequest signUpRequest = SignUpRequest.builder()
                     .clientId(clientId)
@@ -66,15 +54,11 @@ public class SellerService {
                     .secretHash(secretVal)
                     .userAttributes(attrs)
                     .build();
-
             SignUpResponse result = cognitoClient.signUp(signUpRequest);
             String userId = result.userSub();
             Seller seller = new Seller(userId, sellerSignUp.getName(), sellerSignUp.getEmail(), sellerSignUp.getContactNumber(), sellerSignUp.getAddress(), sellerSignUp.getLogoUrl());
-
-            DynamoDbTable<Seller> sellerTable = enhancedClient.table("Seller", TableSchema.fromBean(Seller.class));
             sellerTable.putItem(seller);
             return ResponseEntity.ok(new SellerSignUpResponse(seller));
-
         } catch (Exception e) {
             System.out.println(e.getMessage());
             return ResponseEntity.status(400).body(new SellerSignUpResponse(null, e.getMessage()));
@@ -108,10 +92,6 @@ public class SellerService {
                 if (sellerUpdate.getLogoUrl() != null) {
                     seller.setLogoUrl(sellerUpdate.getLogoUrl());
                 }
-                DynamoDbEnhancedClient enhancedClient = DynamoDbEnhancedClient.builder()
-                        .dynamoDbClient(dynamoDbClient)
-                        .build();
-                DynamoDbTable<Seller> sellerTable = enhancedClient.table("Seller", TableSchema.fromBean(Seller.class));
                 sellerTable.putItem(seller);
                 return ResponseEntity.ok(new SellerUpdateResponse(seller));
             }
@@ -124,13 +104,7 @@ public class SellerService {
 
     public Seller getSeller(String id) {
         try {
-            DynamoDbEnhancedClient enhancedClient = DynamoDbEnhancedClient.builder()
-                    .dynamoDbClient(dynamoDbClient)
-                    .build();
-            Key key = Key.builder()
-                    .partitionValue(id)
-                    .build();
-            DynamoDbTable<Seller> sellerTable = enhancedClient.table("Seller", TableSchema.fromBean(Seller.class));
+            Key key = Key.builder().partitionValue(id).build();
             return sellerTable.getItem(r -> r.key(key));
         } catch (Exception e) {
             System.out.println(e.getMessage());
