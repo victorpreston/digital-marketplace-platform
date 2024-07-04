@@ -1,18 +1,16 @@
-package com.nebulamart.productservice.entity;
+package com.nebulamart.productservice.template;
 
+import com.nebulamart.productservice.entity.Contract;
+import com.nebulamart.productservice.entity.Courier;
+import com.nebulamart.productservice.entity.Seller;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
-import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
-import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
 
 import java.util.List;
 
 @Data
 @AllArgsConstructor
-@NoArgsConstructor
-@DynamoDbBean
-public class Product {
+public class FullyPopulatedProduct {
 
     private String id;
     private String name;
@@ -26,19 +24,11 @@ public class Product {
     private float discount;
     private float rating;
     private int ratingCount;
-
-    private String sellerId;
-    private String courierId;
-    private String contractId;
+    private Seller seller;
+    private Courier courier;
+    private Contract contract;
     private String status;
     private String createdDate;
     private String lastUpdatedDate;
-    private int searchIndex;
-
-    @DynamoDbPartitionKey
-    public String getId() {
-        return id;
-    }
 
 }
-

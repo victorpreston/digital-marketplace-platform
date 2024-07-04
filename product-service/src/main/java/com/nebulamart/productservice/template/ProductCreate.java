@@ -19,7 +19,7 @@ public class ProductCreate {
     private float discount;
 
     public boolean isValid() {
-        return name != null && description != null && brand != null && imageUrls != null && category != null && stock >= 0 && basePrice > 0 && discount >= 0 && productCategoryList.contains(category);
+        return name != null && description != null && brand != null && imageUrls != null && category != null && stock >= 0 && basePrice > 0 && discount >= 0 && discount <= 100 && productCategoryList.contains(category);
     }
 
 }

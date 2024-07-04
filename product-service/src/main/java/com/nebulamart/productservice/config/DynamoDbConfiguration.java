@@ -1,6 +1,7 @@
 package com.nebulamart.productservice.config;
 
 import com.nebulamart.productservice.entity.Contract;
+import com.nebulamart.productservice.entity.Courier;
 import com.nebulamart.productservice.entity.Product;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -8,6 +9,7 @@ import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
+import software.amazon.awssdk.enhanced.dynamodb.DynamoDbIndex;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
 import software.amazon.awssdk.regions.Region;
@@ -49,6 +51,34 @@ public class DynamoDbConfiguration {
                         .build())
                 .build();
         return dynamoDbEnhancedClient.table("Contract", TableSchema.fromBean(Contract.class));
+    }
+
+    @Bean
+    public DynamoDbIndex<Contract> contractTableCourierIndex() {
+        AwsCredentialsProvider awsCredentialsProvider = StaticCredentialsProvider.create(
+                AwsBasicCredentials.create(accessKey, secretKey));
+
+        DynamoDbEnhancedClient dynamoDbEnhancedClient = DynamoDbEnhancedClient.builder()
+                .dynamoDbClient(DynamoDbClient.builder()
+                        .region(Region.US_EAST_1)
+                        .credentialsProvider(awsCredentialsProvider)
+                        .build())
+                .build();
+        return dynamoDbEnhancedClient.table("Contract", TableSchema.fromBean(Contract.class)).index("courier-index");
+    }
+
+    @Bean
+    public DynamoDbIndex<Contract> contractTableSellerIndex() {
+        AwsCredentialsProvider awsCredentialsProvider = StaticCredentialsProvider.create(
+                AwsBasicCredentials.create(accessKey, secretKey));
+
+        DynamoDbEnhancedClient dynamoDbEnhancedClient = DynamoDbEnhancedClient.builder()
+                .dynamoDbClient(DynamoDbClient.builder()
+                        .region(Region.US_EAST_1)
+                        .credentialsProvider(awsCredentialsProvider)
+                        .build())
+                .build();
+        return dynamoDbEnhancedClient.table("Contract", TableSchema.fromBean(Contract.class)).index("seller-index");
     }
 
 }
