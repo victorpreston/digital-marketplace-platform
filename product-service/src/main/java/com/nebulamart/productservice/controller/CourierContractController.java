@@ -1,6 +1,5 @@
 package com.nebulamart.productservice.controller;
 
-import com.nebulamart.productservice.entity.Contract;
 import com.nebulamart.productservice.service.ContractService;
 import com.nebulamart.productservice.template.CourierRespondResponse;
 import com.nebulamart.productservice.template.RespondContractRequest;
@@ -10,7 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/contracts/courier")
+@RequestMapping("/contract/courier")
 public class CourierContractController {
 
     private final ContractService contractService;
