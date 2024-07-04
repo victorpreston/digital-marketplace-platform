@@ -17,11 +17,12 @@ public class Contract {
     private String sellerId;
     private String courierId;
     private float deliveryCharge;
-    private ContractStatus status;
+    private String status;
 
     @DynamoDbPartitionKey
     public String getId() {
         return id;
     }
+
 }
 
