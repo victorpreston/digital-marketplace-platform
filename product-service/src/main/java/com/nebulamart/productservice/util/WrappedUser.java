@@ -1,11 +1,9 @@
 package com.nebulamart.productservice.util;
-import com.nebulamart.productservice.entity.User;
 
 public class WrappedUser {
     private String cognitoUsername;
     private String role;
     private String email;
-    private User user = null;
 
     public WrappedUser(String cognitoUsername, String role, String email) {
         this.cognitoUsername = cognitoUsername;
@@ -25,11 +23,4 @@ public class WrappedUser {
         return email;
     }
 
-    public User getUser() {
-        return user;
-    }
-
-    public void setUser(User user) {
-        this.user = user;
-    }
 }
