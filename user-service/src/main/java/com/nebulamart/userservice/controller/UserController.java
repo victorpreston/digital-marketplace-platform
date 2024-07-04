@@ -20,8 +20,8 @@ public class UserController {
     }
 
     @GetMapping("/sign-out")
-    public StatusResponse signOut(@PathParam("accessToken") String accessToken) {
-        return userService.signOut(accessToken);
+    public ResponseEntity<StatusResponse> signOut(@RequestHeader("Authorization") String bearerHeader) {
+        return userService.signOut(bearerHeader);
     }
 
     @PostMapping("/change-password")
@@ -29,16 +29,11 @@ public class UserController {
         if (!changePassword.isValid()) {
             return ResponseEntity.status(400).body(new ChangePasswordResponse(false, "Missing old or new password"));
         }
-        try {
-            ResponseEntity<ChangePasswordResponse> responseEntity = userService.changeTempPassword(accessToken, changePassword.getOldPassword(), changePassword.getNewPassword());
-            if (responseEntity == null) {
-                return ResponseEntity.status(400).body(new ChangePasswordResponse(false, "Failed to change password"));
-            }
-            return responseEntity;
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
-            return ResponseEntity.status(400).body(new ChangePasswordResponse(false, e.getMessage()));
+        ResponseEntity<ChangePasswordResponse> responseEntity = userService.changeTempPassword(accessToken, changePassword.getOldPassword(), changePassword.getNewPassword());
+        if (responseEntity == null) {
+            return ResponseEntity.status(400).body(new ChangePasswordResponse(false, "Failed to change password"));
         }
+        return responseEntity;
     }
 
 }

@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/open")
+@RequestMapping("")
 public class OpenController {
     private final ImageUploadService imageUploadService;
     private final SellerService sellerService;
@@ -29,7 +29,7 @@ public class OpenController {
         this.courierService = courierService;
     }
 
-    @GetMapping("/profile-image-upload-url")
+    @GetMapping("/upload-url")
     public ResponseEntity<GetUrlResponse> getPreSignedUrl(@PathParam("extension") String extension) {
         if (extension == null || extension.isEmpty()) {
             return ResponseEntity.status(400).body(new GetUrlResponse(null, "Missing or invalid extension"));
