@@ -21,7 +21,7 @@ public class ProductUpdate {
     private float discount;
 
     public boolean isValid() {
-        return name != null || description != null || brand != null || imageUrls != null || (category != null && productCategoryList.contains(category)) || stock >= 0 || basePrice > 0 || discount >= 0;
+        return name != null || description != null || brand != null || imageUrls != null || (category != null && productCategoryList.contains(category)) || stock >= 0 || basePrice > 0 || (discount >= 0 && discount <= 100);
     }
 
 }
