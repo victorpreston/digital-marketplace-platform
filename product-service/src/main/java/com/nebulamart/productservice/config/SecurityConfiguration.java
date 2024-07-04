@@ -7,13 +7,11 @@ import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.core.user.OAuth2UserAuthority;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.*;
 import org.springframework.security.web.SecurityFilterChain;
-
 import java.util.*;
 
 @Configuration
@@ -26,16 +24,19 @@ public class SecurityConfiguration {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/contracts/courier/**").hasAuthority("ROLE_COURIER")
+                        .requestMatchers("/contract/courier/**").hasAuthority("ROLE_COURIER")
                 )
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/contracts/seller/**").hasAuthority("ROLE_SELLER")
+                        .requestMatchers("/contract/seller/**").hasAuthority("ROLE_SELLER")
                 )
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/product/**").hasAuthority("ROLE_SELLER")
                 )
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/products/**").permitAll()
+                )
+                .authorizeHttpRequests(authorize -> authorize
+                        .requestMatchers("/contracts/**").authenticated()
                 )
                 .authorizeHttpRequests(authorize -> authorize
                         .anyRequest().authenticated()
