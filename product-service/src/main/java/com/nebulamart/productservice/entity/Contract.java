@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbSecondaryPartitionKey;
 
 @Data
 @AllArgsConstructor
@@ -24,5 +25,14 @@ public class Contract {
         return id;
     }
 
+    @DynamoDbSecondaryPartitionKey(indexNames = { "courier-index" })
+    public String getCourierId() {
+        return courierId;
+    }
+
+    @DynamoDbSecondaryPartitionKey(indexNames = { "seller-index" })
+    public String getSellerId() {
+        return sellerId;
+    }
 }
 
