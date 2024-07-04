@@ -31,6 +31,9 @@ public class Product {
     private String courierId;
     private String contractId;
     private String status;
+    private String createdDate;
+    private String lastUpdatedDate;
+    private int searchIndex;
 
     @DynamoDbPartitionKey
     public String getId() {
