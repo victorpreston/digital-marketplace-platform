@@ -11,26 +11,28 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
+import software.amazon.awssdk.enhanced.dynamodb.DynamoDbIndex;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.enhanced.dynamodb.Key;
-import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
-import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-import java.util.UUID;
-import static com.nebulamart.productservice.entity.Constants.contractStatusList;
-import static com.nebulamart.productservice.entity.Constants.productStatusList;
+import software.amazon.awssdk.enhanced.dynamodb.model.PageIterable;
+import java.util.*;
+import static software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional.keyEqualTo;
 
 @Service
 public class ContractService {
     private final DynamoDbTable<Product> productTable;
     private final DynamoDbTable<Contract> contractTable;
+    private final DynamoDbIndex<Contract> contractTableCourierIndex;
+    private final DynamoDbIndex<Contract> contractTableSellerIndex;
     private final AuthFacade authFacade;
     private final RestTemplate restTemplate;
 
     @Autowired
-    public ContractService(DynamoDbTable<Product> productTable, DynamoDbTable<Contract> contractTable, AuthFacade authFacade, RestTemplate restTemplate) {
+    public ContractService(DynamoDbTable<Product> productTable, DynamoDbTable<Contract> contractTable, DynamoDbIndex<Contract> contractTableCourierIndex, DynamoDbIndex<Contract> contractTableSellerIndex, AuthFacade authFacade, RestTemplate restTemplate) {
         this.productTable = productTable;
         this.contractTable = contractTable;
+        this.contractTableCourierIndex = contractTableCourierIndex;
+        this.contractTableSellerIndex = contractTableSellerIndex;
         this.authFacade = authFacade;
         this.restTemplate = restTemplate;
     }
@@ -46,11 +48,11 @@ public class ContractService {
             if (!product.getSellerId().equals(sellerId)) {
                 return ResponseEntity.status(403).body(new CourierChangeResponse(null, "Unauthorized"));
             }
-            Courier courier = restTemplate.getForObject("http://USER-SERVICE/api/user-service/open/couriers/" + courierChange.getCourierId(), Courier.class);
+            Courier courier = restTemplate.getForObject("http://USER-SERVICE/api/couriers/" + courierChange.getCourierId(), Courier.class);
             if (courier == null) {
                 return ResponseEntity.status(400).body(new CourierChangeResponse(null, "Courier not found"));
             }
-            Contract contract = new Contract(UUID.randomUUID().toString(), product.getId(), sellerId, courier.getId(), 0, contractStatusList.get(0));
+            Contract contract = new Contract(UUID.randomUUID().toString(), product.getId(), sellerId, courier.getId(), 0, "COURIER_ACCEPTANCE_PENDING");
             contractTable.putItem(contract);
             product.setCourierId(courier.getId());
             product.setContractId(contract.getId());
@@ -78,7 +80,7 @@ public class ContractService {
             }
             product.setCourierId(null);
             product.setContractId(null);
-            product.setStatus(productStatusList.get(0));
+            product.setStatus("COURIER_UNASSIGNED");
             contractTable.deleteItem(r -> r.key(Key.builder().partitionValue(product.getContractId()).build()));
             productTable.updateItem(product);
             return ResponseEntity.status(204).body(new CourierChangeResponse(product, "Courier removed successfully"));
@@ -102,14 +104,14 @@ public class ContractService {
             if (product.getContractId() == null) {
                 return ResponseEntity.status(400).body(new CourierChangeResponse(null, "No contract found"));
             }
-            Courier courier = restTemplate.getForObject("http://USER-SERVICE/api/user-service/open/couriers/" + courierChange.getCourierId(), Courier.class);
+            Courier courier = restTemplate.getForObject("http://USER-SERVICE/api/couriers/" + courierChange.getCourierId(), Courier.class);
             if (courier == null) {
                 return ResponseEntity.status(400).body(new CourierChangeResponse(null, "Courier not found"));
             }
-            Contract newContract = new Contract(UUID.randomUUID().toString(), product.getId(), sellerId, courier.getId(), 0, contractStatusList.get(0));
+            Contract newContract = new Contract(UUID.randomUUID().toString(), product.getId(), sellerId, courier.getId(), 0, "COURIER_ACCEPTANCE_PENDING");
             product.setCourierId(courier.getId());
             product.setContractId(newContract.getId());
-            product.setStatus(productStatusList.get(0));
+            product.setStatus("COURIER_UNASSIGNED");
             contractTable.deleteItem(r -> r.key(Key.builder().partitionValue(product.getContractId()).build()));
             contractTable.putItem(newContract);
             productTable.updateItem(product);
@@ -135,12 +137,12 @@ public class ContractService {
             if (product == null) {
                 return ResponseEntity.status(404).body(new CourierRespondResponse(null, "Product not found"));
             }
-            if (!product.getStatus().equals(productStatusList.get(0)) || !contract.getStatus().equals(contractStatusList.get(0))) {
+            if (!product.getStatus().equals("COURIER_UNASSIGNED") || !contract.getStatus().equals("COURIER_ACCEPTANCE_PENDING")) {
                 return ResponseEntity.status(400).body(new CourierRespondResponse(null, "Product is not in acceptance pending state"));
             }
             contract.setDeliveryCharge(deliveryCharge);
-            contract.setStatus(contractStatusList.get(2));
-            product.setStatus(productStatusList.get(1));
+            contract.setStatus("ACTIVE");
+            product.setStatus("ACTIVE");
             contractTable.updateItem(contract);
             productTable.updateItem(product);
             return ResponseEntity.ok(new CourierRespondResponse(contract, "Contract accepted successfully"));
@@ -165,10 +167,10 @@ public class ContractService {
             if (product == null) {
                 return ResponseEntity.status(404).body(new CourierRespondResponse(null, "Product not found"));
             }
-            if (!product.getStatus().equals(productStatusList.get(0)) || !contract.getStatus().equals(contractStatusList.get(0))) {
+            if (!product.getStatus().equals("COURIER_UNASSIGNED") || !contract.getStatus().equals("COURIER_ACCEPTANCE_PENDING")) {
                 return ResponseEntity.status(400).body(new CourierRespondResponse(null, "Product is not in acceptance pending state"));
             }
-            contract.setStatus(contractStatusList.get(1));
+            contract.setStatus("COURIER_REJECTED");
             contractTable.updateItem(contract);
             return ResponseEntity.ok(new CourierRespondResponse(contract, "Contract rejected successfully"));
         } catch (Exception e) {
@@ -192,11 +194,11 @@ public class ContractService {
             if (product == null) {
                 return ResponseEntity.status(404).body(new CourierRespondResponse(null, "Product not found"));
             }
-            if (!product.getStatus().equals(productStatusList.get(1)) || !contract.getStatus().equals(contractStatusList.get(2))) {
+            if (!product.getStatus().equals("ACTIVE") || !contract.getStatus().equals("ACTIVE")) {
                 return ResponseEntity.status(400).body(null);
             }
-            contract.setStatus(contractStatusList.get(3));
-            product.setStatus(productStatusList.get(0));
+            contract.setStatus("COURIER_CANCELLED");
+            product.setStatus("COURIER_UNASSIGNED");
             contractTable.updateItem(contract);
             productTable.updateItem(product);
             return ResponseEntity.ok(new CourierRespondResponse(contract, "Contract cancelled successfully"));
@@ -224,7 +226,7 @@ public class ContractService {
             if (product.getContractId() != null && product.getContractId().equals(contractId)) {
                 product.setCourierId(null);
                 product.setContractId(null);
-                product.setStatus(productStatusList.get(0));
+                product.setStatus("COURIER_UNASSIGNED");
                 productTable.updateItem(product);
             }
             contractTable.deleteItem(r -> r.key(Key.builder().partitionValue(contractId).build()));
@@ -252,6 +254,76 @@ public class ContractService {
         } catch (Exception e) {
             System.out.println(e.getMessage());
             return ResponseEntity.status(400).body(new CourierRespondResponse(null, e.getMessage()));
+        }
+    }
+
+    public ResponseEntity<List<Contract>> getContracts(String accessToken) {
+        try {
+            WrappedUser wrappedUser = authFacade.getWrappedUser(accessToken);
+            String userRole = authFacade.getRole(wrappedUser);
+            if (userRole.equals("SELLER")) {
+                String sellerId = authFacade.getCognitoUsername(wrappedUser);
+                PageIterable<Contract> contractsOfSeller = (PageIterable<Contract>) contractTableSellerIndex.query(r -> r.queryConditional(keyEqualTo(k -> k.partitionValue(sellerId))));
+                List<Contract> contracts = new ArrayList<>();
+                for (Contract contract : contractsOfSeller.items()) {
+                    contracts.add(contract);
+                }
+                return ResponseEntity.ok(contracts);
+            } else if (userRole.equals("COURIER")) {
+                String courierId = authFacade.getCognitoUsername(wrappedUser);
+                PageIterable<Contract> contractsOfCourier = (PageIterable<Contract>) contractTableCourierIndex.query(r -> r.queryConditional(keyEqualTo(k -> k.partitionValue(courierId))));
+                List<Contract> contracts = new ArrayList<>();
+                for (Contract contract : contractsOfCourier.items()) {
+                    contracts.add(contract);
+                }
+                return ResponseEntity.ok(contracts);
+            } else {
+                return ResponseEntity.status(403).body(null);
+            }
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            return ResponseEntity.status(400).body(null);
+        }
+
+    }
+
+    private PopulatedContract getPopulatedContract(Contract contract) {
+        Product product = productTable.getItem(r -> r.key(Key.builder().partitionValue(contract.getProductId()).build()));
+        Courier courier = restTemplate.getForObject("http://USER-SERVICE/api/couriers/" + contract.getCourierId(), Courier.class);
+        Seller seller = restTemplate.getForObject("http://USER-SERVICE/api/sellers/" + contract.getSellerId(), Seller.class);
+        return new PopulatedContract(contract.getId(), product, seller, courier, contract.getDeliveryCharge(), contract.getStatus());
+    }
+
+    public ResponseEntity<PopulatedContract> getContract(String contractId, String accessToken) {
+        try {
+            WrappedUser wrappedUser = authFacade.getWrappedUser(accessToken);
+            String userRole = authFacade.getRole(wrappedUser);
+            if (userRole.equals("SELLER")) {
+                String sellerId = authFacade.getCognitoUsername(wrappedUser);
+                Contract contract = contractTable.getItem(r -> r.key(Key.builder().partitionValue(contractId.toString()).build()));
+                if (contract == null) {
+                    return ResponseEntity.status(404).body(null);
+                }
+                if (!contract.getSellerId().equals(sellerId)) {
+                    return ResponseEntity.status(403).body(null);
+                }
+                return ResponseEntity.ok(getPopulatedContract(contract));
+            } else if (userRole.equals("COURIER")) {
+                String courierId = authFacade.getCognitoUsername(wrappedUser);
+                Contract contract = contractTable.getItem(r -> r.key(Key.builder().partitionValue(contractId.toString()).build()));
+                if (contract == null) {
+                    return ResponseEntity.status(404).body(null);
+                }
+                if (!contract.getCourierId().equals(courierId)) {
+                    return ResponseEntity.status(403).body(null);
+                }
+                return ResponseEntity.ok(getPopulatedContract(contract));
+            } else {
+                return ResponseEntity.status(403).body(null);
+            }
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            return ResponseEntity.status(400).body(null);
         }
     }
 
