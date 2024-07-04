@@ -25,18 +25,15 @@ public class SecurityConfiguration {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
-//                .authorizeHttpRequests(authorize -> authorize
-//                        .requestMatchers("/auth/**").permitAll()
-//                )
-//                .authorizeHttpRequests(authorize -> authorize
-//                        .requestMatchers("/open/**").permitAll()
-//                )
-//                .authorizeHttpRequests(authorize -> authorize
-//                        .requestMatchers("/customer/**").hasAuthority("ROLE_CUSTOMER")
-//                )
-//                .authorizeHttpRequests(authorize -> authorize
-//                        .requestMatchers("/courier/**").hasAuthority("ROLE_COURIER")
-//                )
+                .authorizeHttpRequests(authorize -> authorize
+                        .requestMatchers("/contracts/courier/**").hasAuthority("ROLE_COURIER")
+                )
+                .authorizeHttpRequests(authorize -> authorize
+                        .requestMatchers("/contracts/seller/**").hasAuthority("ROLE_SELLER")
+                )
+                .authorizeHttpRequests(authorize -> authorize
+                        .requestMatchers("/product/**").hasAuthority("ROLE_SELLER")
+                )
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/products/**").permitAll()
                 )
