@@ -6,11 +6,11 @@ import lombok.Data;
 
 @Data
 @AllArgsConstructor
-public class CustomerSignUpResponse {
+public class CustomerSignUpResponseDTO {
     private Customer customer;
     private String message;
 
-    public CustomerSignUpResponse(Customer customer) {
+    public CustomerSignUpResponseDTO(Customer customer) {
         this.customer = customer;
         this.message = "Sign up successful";
     }

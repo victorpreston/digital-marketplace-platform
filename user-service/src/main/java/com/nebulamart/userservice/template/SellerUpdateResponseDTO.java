@@ -6,11 +6,11 @@ import lombok.Data;
 
 @Data
 @AllArgsConstructor
-public class SellerUpdateResponse {
+public class SellerUpdateResponseDTO {
     private Seller seller;
     private String message;
 
-    public SellerUpdateResponse(Seller seller) {
+    public SellerUpdateResponseDTO(Seller seller) {
         this.seller = seller;
         this.message = "Account update successful";
     }

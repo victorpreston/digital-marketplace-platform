@@ -5,15 +5,11 @@ import lombok.Data;
 
 @Data
 @AllArgsConstructor
-public class CourierSignUp {
-
-    private String name;
+public class UserSignInDTO {
     private String email;
     private String password;
-    private String contactNumber;
-    private String logoUrl;
 
     public boolean isValid() {
-        return name != null && email != null && password != null && contactNumber != null;
+        return email != null && password != null;
     }
 }

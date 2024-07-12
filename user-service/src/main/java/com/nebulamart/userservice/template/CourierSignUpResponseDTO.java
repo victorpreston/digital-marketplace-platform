@@ -1,17 +1,17 @@
 package com.nebulamart.userservice.template;
 
-import com.nebulamart.userservice.entity.Seller;
+import com.nebulamart.userservice.entity.Courier;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
 @Data
 @AllArgsConstructor
-public class SellerSignUpResponse {
-    private Seller seller;
+public class CourierSignUpResponseDTO {
+    private Courier courier;
     private String message;
 
-    public SellerSignUpResponse(Seller seller) {
-        this.seller = seller;
+    public CourierSignUpResponseDTO(Courier courier) {
+        this.courier = courier;
         this.message = "Sign up successful";
     }
 }

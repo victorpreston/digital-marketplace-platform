@@ -5,7 +5,7 @@ import lombok.Data;
 
 @Data
 @AllArgsConstructor
-public class SellerUpdate {
+public class SellerUpdateDTO {
 
     private String name;
     private String contactNumber;

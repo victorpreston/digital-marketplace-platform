@@ -5,6 +5,6 @@ import lombok.Data;
 
 @Data
 @AllArgsConstructor
-public class StatusResponse {
+public class StatusResponseDTO {
     private Boolean success;
 }
