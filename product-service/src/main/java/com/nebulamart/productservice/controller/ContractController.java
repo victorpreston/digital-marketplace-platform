@@ -2,10 +2,7 @@ package com.nebulamart.productservice.controller;
 
 import com.nebulamart.productservice.entity.Contract;
 import com.nebulamart.productservice.service.ContractService;
-import com.nebulamart.productservice.template.CourierRespondResponse;
-import com.nebulamart.productservice.template.PopulatedContract;
-import com.nebulamart.productservice.template.RespondContractRequest;
-import com.nebulamart.productservice.template.UpdateDeliveryCharge;
+import com.nebulamart.productservice.template.PopulatedContractDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -33,8 +30,8 @@ public class ContractController {
     }
 
     @GetMapping("/{contractId}")
-    public ResponseEntity<PopulatedContract> getContract(@RequestHeader("Authorization") String accessToken, @PathVariable String contractId) {
-        ResponseEntity<PopulatedContract> responseEntity = contractService.getContract(contractId, accessToken);
+    public ResponseEntity<PopulatedContractDTO> getContract(@RequestHeader("Authorization") String accessToken, @PathVariable String contractId) {
+        ResponseEntity<PopulatedContractDTO> responseEntity = contractService.getContract(contractId, accessToken);
         if (responseEntity == null) {
             return ResponseEntity.status(400).body(null);
         }

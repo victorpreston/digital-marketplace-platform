@@ -7,7 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.nebulamart.productservice.service.ImageUploadService;
-import com.nebulamart.productservice.template.GetUrlResponse;
+import com.nebulamart.productservice.template.GetUrlResponseDTO;
 import java.util.UUID;
 
 @RestController
@@ -23,35 +23,37 @@ public class ProductController {
     }
 
     @GetMapping("/upload-url")
-    public ResponseEntity<GetUrlResponse> getPreSignedUrl(@PathParam("extension") String extension) {
+    public ResponseEntity<GetUrlResponseDTO> getPreSignedUrl(@PathParam("extension") String extension) {
         if (extension == null || extension.isEmpty()) {
-            return ResponseEntity.status(400).body(new GetUrlResponse(null, "Missing or invalid extension"));
+            return ResponseEntity.status(400).body(new GetUrlResponseDTO(null, "Missing or invalid extension"));
+        } else if (!extension.equals("jpg") && !extension.equals("jpeg") && !extension.equals("png")) {
+            return ResponseEntity.status(400).body(new GetUrlResponseDTO(null, "Invalid extension"));
         }
         String preSignedUrl = imageUploadService.getPreSignedUrl("products" + "/" + UUID.randomUUID().toString() + "." + extension);
         if (preSignedUrl == null) {
-            return ResponseEntity.status(400).body(new GetUrlResponse(null, "Failed to get pre-signed URL"));
+            return ResponseEntity.status(400).body(new GetUrlResponseDTO(null, "Failed to get pre-signed URL"));
         }
-        return ResponseEntity.ok(new GetUrlResponse(preSignedUrl, "Pre-signed URL generated successfully"));
+        return ResponseEntity.ok(new GetUrlResponseDTO(preSignedUrl, "Pre-signed URL generated successfully"));
     }
 
     @PostMapping("/create")
-    public ResponseEntity<ProductCreateResponse> createProduct(@RequestHeader("Authorization") String accessToken, @RequestBody ProductCreate productCreate) {
-        if (!productCreate.isValid()) {
-            return ResponseEntity.status(400).body(new ProductCreateResponse(null, "Missing required fields"));
+    public ResponseEntity<ProductCreateResponseDTO> createProduct(@RequestHeader("Authorization") String accessToken, @RequestBody ProductCreateDTO productCreateDTO) {
+        if (!productCreateDTO.isValid()) {
+            return ResponseEntity.status(400).body(new ProductCreateResponseDTO(null, "Missing required fields"));
         }
-        ResponseEntity<ProductCreateResponse> responseEntity = productService.createProduct(accessToken, productCreate);
+        ResponseEntity<ProductCreateResponseDTO> responseEntity = productService.createProduct(accessToken, productCreateDTO);
         if (responseEntity == null) {
-            return ResponseEntity.status(400).body(new ProductCreateResponse(null, "Product creation failed"));
+            return ResponseEntity.status(400).body(new ProductCreateResponseDTO(null, "Product creation failed"));
         }
         return responseEntity;
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<ProductCreateResponse> updateProduct(@RequestHeader("Authorization") String accessToken, @PathVariable("id") String id, @RequestBody ProductUpdate productUpdate) {
-        if (!productUpdate.isValid()) {
+    public ResponseEntity<ProductCreateResponseDTO> updateProduct(@RequestHeader("Authorization") String accessToken, @PathVariable("id") String id, @RequestBody ProductUpdateDTO productUpdateDTO) {
+        if (!productUpdateDTO.isValid()) {
             return ResponseEntity.status(400).body(null);
         }
-        ResponseEntity<ProductCreateResponse> responseEntity = productService.updateProduct(accessToken, id, productUpdate);
+        ResponseEntity<ProductCreateResponseDTO> responseEntity = productService.updateProduct(accessToken, id, productUpdateDTO);
         if (responseEntity == null) {
             return ResponseEntity.status(400).body(null);
         }
@@ -59,8 +61,8 @@ public class ProductController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<ProductDeleteResponse> deleteProduct(@RequestHeader("Authorization") String accessToken, @PathVariable("id") String id) {
-        ResponseEntity<ProductDeleteResponse> responseEntity = productService.deleteProduct(accessToken, id);
+    public ResponseEntity<ProductDeleteResponseDTO> deleteProduct(@RequestHeader("Authorization") String accessToken, @PathVariable("id") String id) {
+        ResponseEntity<ProductDeleteResponseDTO> responseEntity = productService.deleteProduct(accessToken, id);
         if (responseEntity == null) {
             return ResponseEntity.status(400).body(null);
         }
@@ -68,8 +70,8 @@ public class ProductController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<FullyPopulatedProduct> getProduct(@PathVariable("id") String id, @RequestHeader("Authorization") String accessToken) {
-        ResponseEntity<FullyPopulatedProduct> responseEntity = productService.getProductAsAdmin(id, accessToken);
+    public ResponseEntity<FullyPopulatedProductDTO> getProduct(@PathVariable("id") String id, @RequestHeader("Authorization") String accessToken) {
+        ResponseEntity<FullyPopulatedProductDTO> responseEntity = productService.getProductAsAdmin(id, accessToken);
         if (responseEntity.getBody() == null) {
             return ResponseEntity.status(404).body(null);
         }
