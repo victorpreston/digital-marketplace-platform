@@ -1,10 +1,10 @@
 package com.nebulamart.userservice.service;
 
 import com.nebulamart.userservice.entity.Courier;
-import com.nebulamart.userservice.template.CourierSignUp;
-import com.nebulamart.userservice.template.CourierSignUpResponse;
-import com.nebulamart.userservice.template.CourierUpdate;
-import com.nebulamart.userservice.template.CourierUpdateResponse;
+import com.nebulamart.userservice.template.CourierSignUpDTO;
+import com.nebulamart.userservice.template.CourierSignUpResponseDTO;
+import com.nebulamart.userservice.template.CourierUpdateDTO;
+import com.nebulamart.userservice.template.CourierUpdateResponseDTO;
 import com.nebulamart.userservice.util.AuthFacade;
 import com.nebulamart.userservice.util.SecretHash;
 import com.nebulamart.userservice.util.WrappedUser;
@@ -40,26 +40,26 @@ public class CourierService {
         this.authFacade = authFacade;
     }
 
-    public ResponseEntity<CourierSignUpResponse> courierSignUp(CourierSignUp courierSignUp) {
+    public ResponseEntity<CourierSignUpResponseDTO> courierSignUp(CourierSignUpDTO courierSignUpDTO) {
         try {
             List<AttributeType> attrs = new ArrayList<>();
             AttributeType attributeRole = AttributeType.builder().name("custom:role").value("COURIER").build();
             attrs.add(attributeRole);
-            String secretVal = SecretHash.calculateSecretHash(clientId, clientSecret, courierSignUp.getEmail());
+            String secretVal = SecretHash.calculateSecretHash(clientId, clientSecret, courierSignUpDTO.getEmail());
             SignUpRequest signUpRequest = SignUpRequest.builder().userAttributes(attrs)
                     .clientId(clientId)
                     .secretHash(secretVal)
-                    .username(courierSignUp.getEmail())
-                    .password(courierSignUp.getPassword())
+                    .username(courierSignUpDTO.getEmail())
+                    .password(courierSignUpDTO.getPassword())
                     .build();
             SignUpResponse result = cognitoClient.signUp(signUpRequest);
             String userId = result.userSub();
-            Courier courier = new Courier(userId, courierSignUp.getName(), courierSignUp.getEmail(), courierSignUp.getContactNumber(), courierSignUp.getLogoUrl(), 0, 0);
+            Courier courier = new Courier(userId, courierSignUpDTO.getName(), courierSignUpDTO.getEmail(), courierSignUpDTO.getContactNumber(), courierSignUpDTO.getLogoUrl(), 0, 0);
             courierTable.putItem(courier);
-            return ResponseEntity.ok(new CourierSignUpResponse(courier));
+            return ResponseEntity.ok(new CourierSignUpResponseDTO(courier));
         } catch (Exception e) {
             System.out.println(e.getMessage());
-            return ResponseEntity.status(400).body(new CourierSignUpResponse(null, e.getMessage()));
+            return ResponseEntity.status(400).body(new CourierSignUpResponseDTO(null, e.getMessage()));
         }
     }
 
@@ -73,27 +73,27 @@ public class CourierService {
         }
     }
 
-    public ResponseEntity<CourierUpdateResponse> updateCourierDetails(String accessToken, CourierUpdate courierUpdate) {
+    public ResponseEntity<CourierUpdateResponseDTO> updateCourierDetails(String accessToken, CourierUpdateDTO courierUpdateDTO) {
         try {
             WrappedUser wrappedUser = authFacade.getWrappedUser(accessToken);
             Courier courier = (Courier) authFacade.getUser(wrappedUser);
             if (courier != null) {
-                if (courierUpdate.getName() != null) {
-                    courier.setName(courierUpdate.getName());
+                if (courierUpdateDTO.getName() != null) {
+                    courier.setName(courierUpdateDTO.getName());
                 }
-                if (courierUpdate.getContactNumber() != null) {
-                    courier.setContactNumber(courierUpdate.getContactNumber());
+                if (courierUpdateDTO.getContactNumber() != null) {
+                    courier.setContactNumber(courierUpdateDTO.getContactNumber());
                 }
-                if (courierUpdate.getLogoUrl() != null) {
-                    courier.setLogoUrl(courierUpdate.getLogoUrl());
+                if (courierUpdateDTO.getLogoUrl() != null) {
+                    courier.setLogoUrl(courierUpdateDTO.getLogoUrl());
                 }
                 courierTable.putItem(courier);
-                return ResponseEntity.ok(new CourierUpdateResponse(courier));
+                return ResponseEntity.ok(new CourierUpdateResponseDTO(courier));
             }
-            return ResponseEntity.status(401).body(new CourierUpdateResponse(null, "Unauthorized"));
+            return ResponseEntity.status(401).body(new CourierUpdateResponseDTO(null, "Unauthorized"));
         } catch (Exception e) {
             System.out.println(e.getMessage());
-            return ResponseEntity.status(400).body(new CourierUpdateResponse(null, e.getMessage()));
+            return ResponseEntity.status(400).body(new CourierUpdateResponseDTO(null, e.getMessage()));
         }
     }
 

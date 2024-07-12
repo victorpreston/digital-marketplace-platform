@@ -5,7 +5,7 @@ import com.nebulamart.userservice.entity.Seller;
 import com.nebulamart.userservice.service.CourierService;
 import com.nebulamart.userservice.service.ImageUploadService;
 import com.nebulamart.userservice.service.SellerService;
-import com.nebulamart.userservice.template.GetUrlResponse;
+import com.nebulamart.userservice.template.GetUrlResponseDTO;
 import jakarta.websocket.server.PathParam;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -30,15 +30,15 @@ public class OpenController {
     }
 
     @GetMapping("/upload-url")
-    public ResponseEntity<GetUrlResponse> getPreSignedUrl(@PathParam("extension") String extension) {
+    public ResponseEntity<GetUrlResponseDTO> getPreSignedUrl(@PathParam("extension") String extension) {
         if (extension == null || extension.isEmpty()) {
-            return ResponseEntity.status(400).body(new GetUrlResponse(null, "Missing or invalid extension"));
+            return ResponseEntity.status(400).body(new GetUrlResponseDTO(null, "Missing or invalid extension"));
         }
         String preSignedUrl = imageUploadService.getPreSignedUrl("users" + "/" + UUID.randomUUID().toString() + "." + extension);
         if (preSignedUrl == null) {
-            return ResponseEntity.status(400).body(new GetUrlResponse(null, "Failed to get pre-signed URL"));
+            return ResponseEntity.status(400).body(new GetUrlResponseDTO(null, "Failed to get pre-signed URL"));
         }
-        return ResponseEntity.ok(new GetUrlResponse(preSignedUrl, "Pre-signed URL generated successfully"));
+        return ResponseEntity.ok(new GetUrlResponseDTO(preSignedUrl, "Pre-signed URL generated successfully"));
     }
 
     @RequestMapping("/sellers/{id}")

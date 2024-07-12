@@ -24,61 +24,61 @@ public class AuthController {
     }
 
     @PostMapping("/sign-up/customer")
-    public ResponseEntity<CustomerSignUpResponse> CustomerSignUp(@RequestBody CustomerSignUp customerSignUp) {
-        if (!customerSignUp.isValid()) {
-            return ResponseEntity.status(400).body(new CustomerSignUpResponse(null, "Missing required fields"));
+    public ResponseEntity<CustomerSignUpResponseDTO> CustomerSignUp(@RequestBody CustomerSignUpDTO customerSignUpDTO) {
+        if (!customerSignUpDTO.isValid()) {
+            return ResponseEntity.status(400).body(new CustomerSignUpResponseDTO(null, "Missing required fields"));
         }
-        ResponseEntity<CustomerSignUpResponse> responseEntity = customerService.customerSignUp(customerSignUp);
+        ResponseEntity<CustomerSignUpResponseDTO> responseEntity = customerService.customerSignUp(customerSignUpDTO);
         if (responseEntity == null) {
-            return ResponseEntity.status(400).body(new CustomerSignUpResponse(null, "Sign up failed"));
+            return ResponseEntity.status(400).body(new CustomerSignUpResponseDTO(null, "Sign up failed"));
         }
         return responseEntity;
     }
 
     @PostMapping("/sign-up/seller")
-    public ResponseEntity<SellerSignUpResponse> SellerSignUp(@RequestBody SellerSignUp sellerSignUp) {
-        if (!sellerSignUp.isValid()) {
-            return ResponseEntity.status(400).body(new SellerSignUpResponse(null, "Missing required fields"));
+    public ResponseEntity<SellerSignUpResponseDTO> SellerSignUp(@RequestBody SellerSignUpDTO sellerSignUpDTO) {
+        if (!sellerSignUpDTO.isValid()) {
+            return ResponseEntity.status(400).body(new SellerSignUpResponseDTO(null, "Missing required fields"));
         }
-        ResponseEntity<SellerSignUpResponse> responseEntity = sellerService.sellerSignUp(sellerSignUp);
+        ResponseEntity<SellerSignUpResponseDTO> responseEntity = sellerService.sellerSignUp(sellerSignUpDTO);
         if (responseEntity == null) {
-            return ResponseEntity.status(400).body(new SellerSignUpResponse(null, "Sign up failed"));
+            return ResponseEntity.status(400).body(new SellerSignUpResponseDTO(null, "Sign up failed"));
         }
         return responseEntity;
     }
 
     @PostMapping("/sign-up/courier")
-    public ResponseEntity<CourierSignUpResponse> CourierSignUp(@RequestBody CourierSignUp courierSignUp) {
-        if (!courierSignUp.isValid()) {
-            return ResponseEntity.status(400).body(new CourierSignUpResponse(null, "Missing required fields"));
+    public ResponseEntity<CourierSignUpResponseDTO> CourierSignUp(@RequestBody CourierSignUpDTO courierSignUpDTO) {
+        if (!courierSignUpDTO.isValid()) {
+            return ResponseEntity.status(400).body(new CourierSignUpResponseDTO(null, "Missing required fields"));
         }
-        ResponseEntity<CourierSignUpResponse> responseEntity = courierService.courierSignUp(courierSignUp);
+        ResponseEntity<CourierSignUpResponseDTO> responseEntity = courierService.courierSignUp(courierSignUpDTO);
         if (responseEntity == null) {
-            return ResponseEntity.status(400).body(new CourierSignUpResponse(null, "Sign up failed"));
+            return ResponseEntity.status(400).body(new CourierSignUpResponseDTO(null, "Sign up failed"));
         }
         return responseEntity;
     }
 
     @GetMapping("/verify-account")
-    public ResponseEntity<VerifyAccountResponse> confirmSignUp(@PathParam("email") String email, @PathParam("code") String code) {
+    public ResponseEntity<VerifyAccountResponseDTO> confirmSignUp(@PathParam("email") String email, @PathParam("code") String code) {
         if (email == null || code == null) {
-            return ResponseEntity.status(400).body(new VerifyAccountResponse(false, "Missing email or code"));
+            return ResponseEntity.status(400).body(new VerifyAccountResponseDTO(false, "Missing email or code"));
         }
-        ResponseEntity<VerifyAccountResponse> responseEntity = userService.confirmSignUp(email, code);
+        ResponseEntity<VerifyAccountResponseDTO> responseEntity = userService.confirmSignUp(email, code);
         if (responseEntity == null) {
-            return ResponseEntity.status(400).body(new VerifyAccountResponse(false, "Account verification failed"));
+            return ResponseEntity.status(400).body(new VerifyAccountResponseDTO(false, "Account verification failed"));
         }
         return responseEntity;
     }
 
     @PostMapping("/sign-in")
-    public ResponseEntity<SignInResponse> signIn(@RequestBody UserSignIn userSignIn) {
-        if (!userSignIn.isValid()) {
-            return ResponseEntity.status(400).body(new SignInResponse(null, null, "Missing email or password"));
+    public ResponseEntity<SignInResponseDTO> signIn(@RequestBody UserSignInDTO userSignInDTO) {
+        if (!userSignInDTO.isValid()) {
+            return ResponseEntity.status(400).body(new SignInResponseDTO(null, null, "Missing email or password"));
         }
-        ResponseEntity<SignInResponse> responseEntity = userService.signIn(userSignIn);
+        ResponseEntity<SignInResponseDTO> responseEntity = userService.signIn(userSignInDTO);
         if (responseEntity == null) {
-            return ResponseEntity.status(400).body(new SignInResponse(null, null, "Sign in failed"));
+            return ResponseEntity.status(400).body(new SignInResponseDTO(null, null, "Sign in failed"));
         }
         return responseEntity;
     }

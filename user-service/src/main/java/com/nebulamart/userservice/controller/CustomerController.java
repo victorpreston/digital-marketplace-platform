@@ -2,8 +2,8 @@ package com.nebulamart.userservice.controller;
 
 import com.nebulamart.userservice.entity.Customer;
 import com.nebulamart.userservice.service.CustomerService;
-import com.nebulamart.userservice.template.CustomerUpdate;
-import com.nebulamart.userservice.template.CustomerUpdateResponse;
+import com.nebulamart.userservice.template.CustomerUpdateDTO;
+import com.nebulamart.userservice.template.CustomerUpdateResponseDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -28,13 +28,13 @@ public class CustomerController {
     }
 
     @PatchMapping("/account")
-    public ResponseEntity<CustomerUpdateResponse> updateCustomerDetails(@RequestHeader("Authorization") String accessToken, @RequestBody CustomerUpdate customerUpdate) {
-        if (!customerUpdate.isValid()) {
-            return ResponseEntity.status(400).body(new CustomerUpdateResponse(null, "Missing required fields"));
+    public ResponseEntity<CustomerUpdateResponseDTO> updateCustomerDetails(@RequestHeader("Authorization") String accessToken, @RequestBody CustomerUpdateDTO customerUpdateDTO) {
+        if (!customerUpdateDTO.isValid()) {
+            return ResponseEntity.status(400).body(new CustomerUpdateResponseDTO(null, "Missing required fields"));
         }
-        ResponseEntity<CustomerUpdateResponse> responseEntity = customerService.updateCustomerDetails(accessToken, customerUpdate);
+        ResponseEntity<CustomerUpdateResponseDTO> responseEntity = customerService.updateCustomerDetails(accessToken, customerUpdateDTO);
         if (responseEntity == null) {
-            return ResponseEntity.status(400).body(new CustomerUpdateResponse(null, "Update failed"));
+            return ResponseEntity.status(400).body(new CustomerUpdateResponseDTO(null, "Update failed"));
         }
         return responseEntity;
     }

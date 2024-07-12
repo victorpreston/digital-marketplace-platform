@@ -1,10 +1,9 @@
 package com.nebulamart.userservice.controller;
 
 import com.nebulamart.userservice.service.UserService;
-import com.nebulamart.userservice.template.ChangePassword;
-import com.nebulamart.userservice.template.ChangePasswordResponse;
-import com.nebulamart.userservice.template.StatusResponse;
-import jakarta.websocket.server.PathParam;
+import com.nebulamart.userservice.template.ChangePasswordDTO;
+import com.nebulamart.userservice.template.ChangePasswordResponseDTO;
+import com.nebulamart.userservice.template.StatusResponseDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,18 +19,18 @@ public class UserController {
     }
 
     @GetMapping("/sign-out")
-    public ResponseEntity<StatusResponse> signOut(@RequestHeader("Authorization") String bearerHeader) {
+    public ResponseEntity<StatusResponseDTO> signOut(@RequestHeader("Authorization") String bearerHeader) {
         return userService.signOut(bearerHeader);
     }
 
     @PostMapping("/change-password")
-    public ResponseEntity<ChangePasswordResponse> changePassword(@RequestHeader("Authorization") String accessToken, @RequestBody ChangePassword changePassword) {
-        if (!changePassword.isValid()) {
-            return ResponseEntity.status(400).body(new ChangePasswordResponse(false, "Missing old or new password"));
+    public ResponseEntity<ChangePasswordResponseDTO> changePassword(@RequestHeader("Authorization") String accessToken, @RequestBody ChangePasswordDTO changePasswordDTO) {
+        if (!changePasswordDTO.isValid()) {
+            return ResponseEntity.status(400).body(new ChangePasswordResponseDTO(false, "Missing old or new password"));
         }
-        ResponseEntity<ChangePasswordResponse> responseEntity = userService.changeTempPassword(accessToken, changePassword.getOldPassword(), changePassword.getNewPassword());
+        ResponseEntity<ChangePasswordResponseDTO> responseEntity = userService.changeTempPassword(accessToken, changePasswordDTO.getOldPassword(), changePasswordDTO.getNewPassword());
         if (responseEntity == null) {
-            return ResponseEntity.status(400).body(new ChangePasswordResponse(false, "Failed to change password"));
+            return ResponseEntity.status(400).body(new ChangePasswordResponseDTO(false, "Failed to change password"));
         }
         return responseEntity;
     }
