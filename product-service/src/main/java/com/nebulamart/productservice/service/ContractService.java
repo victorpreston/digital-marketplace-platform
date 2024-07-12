@@ -79,9 +79,10 @@ public class ContractService {
                 return ResponseEntity.status(400).body(new CourierChangeResponse(null, "No contract found"));
             }
             product.setCourierId(null);
+            String contractId = product.getContractId();
             product.setContractId(null);
             product.setStatus("COURIER_UNASSIGNED");
-            contractTable.deleteItem(r -> r.key(Key.builder().partitionValue(product.getContractId()).build()));
+            contractTable.deleteItem(r -> r.key(Key.builder().partitionValue(contractId).build()));
             productTable.updateItem(product);
             return ResponseEntity.status(204).body(new CourierChangeResponse(product, "Courier removed successfully"));
         } catch (Exception e) {
@@ -110,9 +111,10 @@ public class ContractService {
             }
             Contract newContract = new Contract(UUID.randomUUID().toString(), product.getId(), sellerId, courier.getId(), 0, "COURIER_ACCEPTANCE_PENDING");
             product.setCourierId(courier.getId());
+            String oldContractId = product.getContractId();
             product.setContractId(newContract.getId());
             product.setStatus("COURIER_UNASSIGNED");
-            contractTable.deleteItem(r -> r.key(Key.builder().partitionValue(product.getContractId()).build()));
+            contractTable.deleteItem(r -> r.key(Key.builder().partitionValue(oldContractId).build()));
             contractTable.putItem(newContract);
             productTable.updateItem(product);
             return ResponseEntity.ok(new CourierChangeResponse(product, "Courier changed successfully"));
