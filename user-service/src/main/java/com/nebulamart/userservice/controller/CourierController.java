@@ -2,8 +2,8 @@ package com.nebulamart.userservice.controller;
 
 import com.nebulamart.userservice.entity.Courier;
 import com.nebulamart.userservice.service.CourierService;
-import com.nebulamart.userservice.template.CourierUpdate;
-import com.nebulamart.userservice.template.CourierUpdateResponse;
+import com.nebulamart.userservice.template.CourierUpdateDTO;
+import com.nebulamart.userservice.template.CourierUpdateResponseDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -28,13 +28,13 @@ public class CourierController {
     }
 
     @PatchMapping("/account")
-    public ResponseEntity<CourierUpdateResponse> updateCourierDetails(@RequestHeader("Authorization") String accessToken, @RequestBody CourierUpdate courierUpdate) {
-        if (!courierUpdate.isValid()) {
-            return ResponseEntity.status(400).body(new CourierUpdateResponse(null, "Missing required fields"));
+    public ResponseEntity<CourierUpdateResponseDTO> updateCourierDetails(@RequestHeader("Authorization") String accessToken, @RequestBody CourierUpdateDTO courierUpdateDTO) {
+        if (!courierUpdateDTO.isValid()) {
+            return ResponseEntity.status(400).body(new CourierUpdateResponseDTO(null, "Missing required fields"));
         }
-        ResponseEntity<CourierUpdateResponse> responseEntity = courierService.updateCourierDetails(accessToken, courierUpdate);
+        ResponseEntity<CourierUpdateResponseDTO> responseEntity = courierService.updateCourierDetails(accessToken, courierUpdateDTO);
         if (responseEntity == null) {
-            return ResponseEntity.status(400).body(new CourierUpdateResponse(null, "Update failed"));
+            return ResponseEntity.status(400).body(new CourierUpdateResponseDTO(null, "Update failed"));
         }
         return responseEntity;
     }

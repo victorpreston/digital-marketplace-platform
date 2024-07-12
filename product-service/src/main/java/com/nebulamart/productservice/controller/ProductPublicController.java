@@ -44,8 +44,8 @@ public class ProductPublicController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<PopulatedProduct> getProduct(@PathVariable("id") String id) {
-        ResponseEntity<PopulatedProduct> responseEntity = productService.getProduct(id);
+    public ResponseEntity<PopulatedProductDTO> getProduct(@PathVariable("id") String id) {
+        ResponseEntity<PopulatedProductDTO> responseEntity = productService.getProduct(id);
         if (responseEntity.getBody() == null) {
             return ResponseEntity.status(404).body(null);
         }

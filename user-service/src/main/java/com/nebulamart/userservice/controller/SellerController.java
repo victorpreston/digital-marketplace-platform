@@ -4,12 +4,11 @@ import com.nebulamart.userservice.entity.Courier;
 import com.nebulamart.userservice.entity.Seller;
 import com.nebulamart.userservice.service.CourierService;
 import com.nebulamart.userservice.service.SellerService;
-import com.nebulamart.userservice.template.SellerUpdate;
-import com.nebulamart.userservice.template.SellerUpdateResponse;
+import com.nebulamart.userservice.template.SellerUpdateDTO;
+import com.nebulamart.userservice.template.SellerUpdateResponseDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 
 @RestController
@@ -34,13 +33,13 @@ public class SellerController {
     }
 
     @PatchMapping("/account")
-    public ResponseEntity<SellerUpdateResponse> updateSellerDetails(@RequestHeader("Authorization") String accessToken, @RequestBody SellerUpdate sellerUpdate) {
-        if (!sellerUpdate.isValid()) {
-            return ResponseEntity.status(400).body(new SellerUpdateResponse(null, "Missing required fields"));
+    public ResponseEntity<SellerUpdateResponseDTO> updateSellerDetails(@RequestHeader("Authorization") String accessToken, @RequestBody SellerUpdateDTO sellerUpdateDTO) {
+        if (!sellerUpdateDTO.isValid()) {
+            return ResponseEntity.status(400).body(new SellerUpdateResponseDTO(null, "Missing required fields"));
         }
-        ResponseEntity<SellerUpdateResponse> responseEntity = sellerService.updateSellerDetails(accessToken, sellerUpdate);
+        ResponseEntity<SellerUpdateResponseDTO> responseEntity = sellerService.updateSellerDetails(accessToken, sellerUpdateDTO);
         if (responseEntity == null) {
-            return ResponseEntity.status(400).body(new SellerUpdateResponse(null, "Update failed"));
+            return ResponseEntity.status(400).body(new SellerUpdateResponseDTO(null, "Update failed"));
         }
         return responseEntity;
     }

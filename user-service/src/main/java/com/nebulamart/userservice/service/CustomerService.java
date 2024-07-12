@@ -1,5 +1,6 @@
 package com.nebulamart.userservice.service;
 
+import com.nebulamart.userservice.repository.CustomerRepository;
 import com.nebulamart.userservice.template.*;
 import com.nebulamart.userservice.entity.Customer;
 import com.nebulamart.userservice.util.AuthFacade;
@@ -9,7 +10,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.*;
 import java.util.*;
@@ -17,7 +17,7 @@ import java.util.*;
 @Service
 public class CustomerService {
     private final CognitoIdentityProviderClient cognitoClient;
-    private final DynamoDbTable<Customer> customerTable;
+    private final CustomerRepository customerRepository;
     private final AuthFacade authFacade;
 
     @Value("${aws-cognito.user-pool-client-id}")
@@ -27,32 +27,32 @@ public class CustomerService {
     private String clientSecret;
 
     @Autowired
-    public CustomerService(CognitoIdentityProviderClient cognitoClient, DynamoDbTable<Customer> customerTable, AuthFacade authFacade) {
+    public CustomerService(CognitoIdentityProviderClient cognitoClient, CustomerRepository customerRepository, AuthFacade authFacade) {
         this.cognitoClient = cognitoClient;
-        this.customerTable = customerTable;
+        this.customerRepository = customerRepository;
         this.authFacade = authFacade;
     }
 
-    public ResponseEntity<CustomerSignUpResponse> customerSignUp(CustomerSignUp customerSignUp) {
+    public ResponseEntity<CustomerSignUpResponseDTO> customerSignUp(CustomerSignUpDTO customerSignUpDTO) {
         try {
             List<AttributeType> attrs = new ArrayList<>();
             AttributeType attributeRole = AttributeType.builder().name("custom:role").value("CUSTOMER").build();
             attrs.add(attributeRole);
-            String secretVal = SecretHash.calculateSecretHash(clientId, clientSecret, customerSignUp.getEmail());
+            String secretVal = SecretHash.calculateSecretHash(clientId, clientSecret, customerSignUpDTO.getEmail());
             SignUpRequest signUpRequest = SignUpRequest.builder().userAttributes(attrs)
                     .clientId(clientId)
                     .secretHash(secretVal)
-                    .username(customerSignUp.getEmail())
-                    .password(customerSignUp.getPassword())
+                    .username(customerSignUpDTO.getEmail())
+                    .password(customerSignUpDTO.getPassword())
                     .build();
             SignUpResponse result = cognitoClient.signUp(signUpRequest);
             String userId = result.userSub();
-            Customer customer = new Customer(userId, customerSignUp.getName(), customerSignUp.getEmail(), customerSignUp.getContactNumber(), customerSignUp.getAddress());
-            customerTable.putItem(customer);
-            return ResponseEntity.ok(new CustomerSignUpResponse(customer));
+            Customer customer = new Customer(userId, customerSignUpDTO.getName(), customerSignUpDTO.getEmail(), customerSignUpDTO.getContactNumber(), customerSignUpDTO.getAddress());
+            customerRepository.saveCustomer(customer);
+            return ResponseEntity.ok(new CustomerSignUpResponseDTO(customer));
         } catch (Exception e) {
             System.out.println(e.getMessage());
-            return ResponseEntity.status(400).body(new CustomerSignUpResponse(null, e.getMessage()));
+            return ResponseEntity.status(400).body(new CustomerSignUpResponseDTO(null, e.getMessage()));
         }
     }
 
@@ -66,27 +66,27 @@ public class CustomerService {
         }
     }
 
-    public ResponseEntity<CustomerUpdateResponse> updateCustomerDetails(String accessToken, CustomerUpdate customerUpdate) {
+    public ResponseEntity<CustomerUpdateResponseDTO> updateCustomerDetails(String accessToken, CustomerUpdateDTO customerUpdateDTO) {
         try {
             WrappedUser wrappedUser = authFacade.getWrappedUser(accessToken);
             Customer customer = (Customer) authFacade.getUser(wrappedUser);
             if (customer != null) {
-                if (customerUpdate.getName() != null) {
-                    customer.setName(customerUpdate.getName());
+                if (customerUpdateDTO.getName() != null) {
+                    customer.setName(customerUpdateDTO.getName());
                 }
-                if (customerUpdate.getContactNumber() != null) {
-                    customer.setContactNumber(customerUpdate.getContactNumber());
+                if (customerUpdateDTO.getContactNumber() != null) {
+                    customer.setContactNumber(customerUpdateDTO.getContactNumber());
                 }
-                if (customerUpdate.getAddress() != null) {
-                    customer.setAddress(customerUpdate.getAddress());
+                if (customerUpdateDTO.getAddress() != null) {
+                    customer.setAddress(customerUpdateDTO.getAddress());
                 }
-                customerTable.putItem(customer);
-                return ResponseEntity.ok(new CustomerUpdateResponse(customer));
+                customerRepository.updateCustomer(customer);
+                return ResponseEntity.ok(new CustomerUpdateResponseDTO(customer));
             }
-            return ResponseEntity.status(400).body(new CustomerUpdateResponse(null, "Customer not found"));
+            return ResponseEntity.status(400).body(new CustomerUpdateResponseDTO(null, "Customer not found"));
         } catch (Exception e) {
             System.out.println(e.getMessage());
-            return ResponseEntity.status(400).body(new CustomerUpdateResponse(null, e.getMessage()));
+            return ResponseEntity.status(400).body(new CustomerUpdateResponseDTO(null, e.getMessage()));
         }
     }
 
