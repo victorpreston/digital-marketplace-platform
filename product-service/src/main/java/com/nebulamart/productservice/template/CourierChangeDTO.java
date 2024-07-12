@@ -5,7 +5,7 @@ import lombok.Data;
 
 @Data
 @AllArgsConstructor
-public class CourierChange {
+public class CourierChangeDTO {
     private String productId;
     private String courierId;
 

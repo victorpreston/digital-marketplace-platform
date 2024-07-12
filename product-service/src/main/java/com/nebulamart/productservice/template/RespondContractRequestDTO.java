@@ -5,7 +5,7 @@ import lombok.Data;
 
 @Data
 @AllArgsConstructor
-public class RespondContractRequest {
+public class RespondContractRequestDTO {
     private String contractId;
     private boolean accept;
     private float deliveryCharge;

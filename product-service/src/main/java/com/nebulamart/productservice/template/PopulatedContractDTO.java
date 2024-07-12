@@ -8,7 +8,7 @@ import lombok.Data;
 
 @Data
 @AllArgsConstructor
-public class PopulatedContract {
+public class PopulatedContractDTO {
     private String id;
     private Product product;
     private Seller seller;

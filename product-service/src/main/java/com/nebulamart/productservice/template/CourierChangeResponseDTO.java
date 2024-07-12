@@ -6,12 +6,7 @@ import lombok.Data;
 
 @Data
 @AllArgsConstructor
-public class ProductCreateResponse {
+public class CourierChangeResponseDTO {
     private Product product;
     private String message;
-
-    public ProductCreateResponse(Product product) {
-        this.product = product;
-        this.message = "Product created successfully";
-    }
 }

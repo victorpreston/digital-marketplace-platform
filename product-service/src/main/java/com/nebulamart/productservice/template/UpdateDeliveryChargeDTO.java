@@ -5,7 +5,7 @@ import lombok.Data;
 
 @Data
 @AllArgsConstructor
-public class UpdateDeliveryCharge {
+public class UpdateDeliveryChargeDTO {
     private float deliveryCharge;
     private String updateNote;
 

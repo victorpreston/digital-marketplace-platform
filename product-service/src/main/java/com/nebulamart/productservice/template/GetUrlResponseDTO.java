@@ -5,7 +5,7 @@ import lombok.Data;
 
 @Data
 @AllArgsConstructor
-public class GetUrlResponse {
+public class GetUrlResponseDTO {
     private String url;
     private String message;
 }
