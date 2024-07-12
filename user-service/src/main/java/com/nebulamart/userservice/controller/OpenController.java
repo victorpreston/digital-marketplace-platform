@@ -33,6 +33,8 @@ public class OpenController {
     public ResponseEntity<GetUrlResponseDTO> getPreSignedUrl(@PathParam("extension") String extension) {
         if (extension == null || extension.isEmpty()) {
             return ResponseEntity.status(400).body(new GetUrlResponseDTO(null, "Missing or invalid extension"));
+        } else if (!extension.equals("jpg") && !extension.equals("jpeg") && !extension.equals("png")) {
+            return ResponseEntity.status(400).body(new GetUrlResponseDTO(null, "Invalid extension"));
         }
         String preSignedUrl = imageUploadService.getPreSignedUrl("users" + "/" + UUID.randomUUID().toString() + "." + extension);
         if (preSignedUrl == null) {
