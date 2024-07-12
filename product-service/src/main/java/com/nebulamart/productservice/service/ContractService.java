@@ -1,5 +1,7 @@
 package com.nebulamart.productservice.service;
 
+import com.nebulamart.productservice.Repository.ContractRepository;
+import com.nebulamart.productservice.Repository.ProductRepository;
 import com.nebulamart.productservice.entity.Contract;
 import com.nebulamart.productservice.entity.Courier;
 import com.nebulamart.productservice.entity.Product;
@@ -11,251 +13,243 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-import software.amazon.awssdk.enhanced.dynamodb.DynamoDbIndex;
-import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
-import software.amazon.awssdk.enhanced.dynamodb.Key;
-import software.amazon.awssdk.enhanced.dynamodb.model.PageIterable;
 import java.util.*;
-import static software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional.keyEqualTo;
 
 @Service
 public class ContractService {
-    private final DynamoDbTable<Product> productTable;
-    private final DynamoDbTable<Contract> contractTable;
-    private final DynamoDbIndex<Contract> contractTableCourierIndex;
-    private final DynamoDbIndex<Contract> contractTableSellerIndex;
+
+    private final ProductRepository productRepository;
+    private final ContractRepository contractRepository;
     private final AuthFacade authFacade;
     private final RestTemplate restTemplate;
 
     @Autowired
-    public ContractService(DynamoDbTable<Product> productTable, DynamoDbTable<Contract> contractTable, DynamoDbIndex<Contract> contractTableCourierIndex, DynamoDbIndex<Contract> contractTableSellerIndex, AuthFacade authFacade, RestTemplate restTemplate) {
-        this.productTable = productTable;
-        this.contractTable = contractTable;
-        this.contractTableCourierIndex = contractTableCourierIndex;
-        this.contractTableSellerIndex = contractTableSellerIndex;
+    public ContractService(ProductRepository productRepository, ContractRepository contractRepository, AuthFacade authFacade, RestTemplate restTemplate) {
+        this.productRepository = productRepository;
+        this.contractRepository = contractRepository;
         this.authFacade = authFacade;
         this.restTemplate = restTemplate;
     }
 
-    public ResponseEntity<CourierChangeResponse> addCourier(String accessToken, CourierChange courierChange) {
+    public ResponseEntity<CourierChangeResponseDTO> addCourier(String accessToken, CourierChangeDTO courierChangeDTO) {
         try {
             WrappedUser wrappedUser = authFacade.getWrappedUser(accessToken);
             String sellerId = authFacade.getCognitoUsername(wrappedUser);
-            Product product = productTable.getItem(r -> r.key(Key.builder().partitionValue(courierChange.getProductId()).build()));
+            Product product = productRepository.getProductById(courierChangeDTO.getProductId());
             if (product == null) {
-                return ResponseEntity.status(404).body(new CourierChangeResponse(null, "Product not found"));
+                return ResponseEntity.status(404).body(new CourierChangeResponseDTO(null, "Product not found"));
             }
             if (!product.getSellerId().equals(sellerId)) {
-                return ResponseEntity.status(403).body(new CourierChangeResponse(null, "Unauthorized"));
+                return ResponseEntity.status(403).body(new CourierChangeResponseDTO(null, "Unauthorized"));
             }
-            Courier courier = restTemplate.getForObject("http://USER-SERVICE/api/couriers/" + courierChange.getCourierId(), Courier.class);
+            Courier courier = restTemplate.getForObject("http://USER-SERVICE/api/couriers/" + courierChangeDTO.getCourierId(), Courier.class);
             if (courier == null) {
-                return ResponseEntity.status(400).body(new CourierChangeResponse(null, "Courier not found"));
+                return ResponseEntity.status(400).body(new CourierChangeResponseDTO(null, "Courier not found"));
             }
             Contract contract = new Contract(UUID.randomUUID().toString(), product.getId(), sellerId, courier.getId(), 0, "COURIER_ACCEPTANCE_PENDING");
-            contractTable.putItem(contract);
+            contractRepository.saveContract(contract);
             product.setCourierId(courier.getId());
             product.setContractId(contract.getId());
-            productTable.updateItem(product);
-            return ResponseEntity.ok(new CourierChangeResponse(product, "Courier added successfully"));
+            productRepository.updateProduct(product);
+            return ResponseEntity.ok(new CourierChangeResponseDTO(product, "Courier added successfully"));
         } catch (Exception e) {
             System.out.println(e.getMessage());
-            return ResponseEntity.status(400).body(new CourierChangeResponse(null, e.getMessage()));
+            return ResponseEntity.status(400).body(new CourierChangeResponseDTO(null, e.getMessage()));
         }
     }
 
-    public ResponseEntity<CourierChangeResponse> removeCourier(String accessToken, String productId) {
+    public ResponseEntity<CourierChangeResponseDTO> removeCourier(String accessToken, String productId) {
         try {
             WrappedUser wrappedUser = authFacade.getWrappedUser(accessToken);
             String sellerId = authFacade.getCognitoUsername(wrappedUser);
-            Product product = productTable.getItem(r -> r.key(Key.builder().partitionValue(productId).build()));
+            Product product = productRepository.getProductById(productId);
             if (product == null) {
-                return ResponseEntity.status(404).body(new CourierChangeResponse(null, "Product not found"));
+                return ResponseEntity.status(404).body(new CourierChangeResponseDTO(null, "Product not found"));
             }
             if (!product.getSellerId().equals(sellerId)) {
-                return ResponseEntity.status(403).body(new CourierChangeResponse(null, "Unauthorized"));
+                return ResponseEntity.status(403).body(new CourierChangeResponseDTO(null, "Unauthorized"));
             }
             if (product.getContractId() == null) {
-                return ResponseEntity.status(400).body(new CourierChangeResponse(null, "No contract found"));
+                return ResponseEntity.status(400).body(new CourierChangeResponseDTO(null, "No contract found"));
             }
             product.setCourierId(null);
             String contractId = product.getContractId();
             product.setContractId(null);
             product.setStatus("COURIER_UNASSIGNED");
-            contractTable.deleteItem(r -> r.key(Key.builder().partitionValue(contractId).build()));
-            productTable.updateItem(product);
-            return ResponseEntity.status(204).body(new CourierChangeResponse(product, "Courier removed successfully"));
+            contractRepository.deleteContract(contractId);
+            productRepository.updateProduct(product);
+            return ResponseEntity.status(204).body(new CourierChangeResponseDTO(product, "Courier removed successfully"));
         } catch (Exception e) {
             System.out.println(e.getMessage());
-            return ResponseEntity.status(400).body(new CourierChangeResponse(null, e.getMessage()));
+            return ResponseEntity.status(400).body(new CourierChangeResponseDTO(null, e.getMessage()));
         }
     }
 
-    public ResponseEntity<CourierChangeResponse> changeCourier(String accessToken, CourierChange courierChange) {
+    public ResponseEntity<CourierChangeResponseDTO> changeCourier(String accessToken, CourierChangeDTO courierChangeDTO) {
         try {
             WrappedUser wrappedUser = authFacade.getWrappedUser(accessToken);
             String sellerId = authFacade.getCognitoUsername(wrappedUser);
-            Product product = productTable.getItem(r -> r.key(Key.builder().partitionValue(courierChange.getProductId()).build()));
+            Product product = productRepository.getProductById(courierChangeDTO.getProductId());
             if (product == null) {
-                return ResponseEntity.status(404).body(new CourierChangeResponse(null, "Product not found"));
+                return ResponseEntity.status(404).body(new CourierChangeResponseDTO(null, "Product not found"));
             }
             if (!product.getSellerId().equals(sellerId)) {
-                return ResponseEntity.status(403).body(new CourierChangeResponse(null, "Unauthorized"));
+                return ResponseEntity.status(403).body(new CourierChangeResponseDTO(null, "Unauthorized"));
             }
             if (product.getContractId() == null) {
-                return ResponseEntity.status(400).body(new CourierChangeResponse(null, "No contract found"));
+                return ResponseEntity.status(400).body(new CourierChangeResponseDTO(null, "No contract found"));
             }
-            Courier courier = restTemplate.getForObject("http://USER-SERVICE/api/couriers/" + courierChange.getCourierId(), Courier.class);
+            Courier courier = restTemplate.getForObject("http://USER-SERVICE/api/couriers/" + courierChangeDTO.getCourierId(), Courier.class);
             if (courier == null) {
-                return ResponseEntity.status(400).body(new CourierChangeResponse(null, "Courier not found"));
+                return ResponseEntity.status(400).body(new CourierChangeResponseDTO(null, "Courier not found"));
             }
             Contract newContract = new Contract(UUID.randomUUID().toString(), product.getId(), sellerId, courier.getId(), 0, "COURIER_ACCEPTANCE_PENDING");
             product.setCourierId(courier.getId());
             String oldContractId = product.getContractId();
             product.setContractId(newContract.getId());
             product.setStatus("COURIER_UNASSIGNED");
-            contractTable.deleteItem(r -> r.key(Key.builder().partitionValue(oldContractId).build()));
-            contractTable.putItem(newContract);
-            productTable.updateItem(product);
-            return ResponseEntity.ok(new CourierChangeResponse(product, "Courier changed successfully"));
+            contractRepository.deleteContract(oldContractId);
+            contractRepository.saveContract(newContract);
+            productRepository.updateProduct(product);
+            return ResponseEntity.ok(new CourierChangeResponseDTO(product, "Courier changed successfully"));
         } catch (Exception e) {
             System.out.println(e.getMessage());
-            return ResponseEntity.status(400).body(new CourierChangeResponse(null, e.getMessage()));
+            return ResponseEntity.status(400).body(new CourierChangeResponseDTO(null, e.getMessage()));
         }
     }
 
-    public ResponseEntity<CourierRespondResponse> acceptContract(String accessToken, String contractId, float deliveryCharge) {
+    public ResponseEntity<CourierRespondResponseDTO> acceptContract(String accessToken, String contractId, float deliveryCharge) {
         try {
             WrappedUser wrappedUser = authFacade.getWrappedUser(accessToken);
             String courierId = authFacade.getCognitoUsername(wrappedUser);
-            Contract contract = contractTable.getItem(r -> r.key(Key.builder().partitionValue(contractId).build()));
+            Contract contract = contractRepository.getContractById(contractId);
             if (contract == null) {
-                return ResponseEntity.status(404).body(new CourierRespondResponse(null, "Contract not found"));
+                return ResponseEntity.status(404).body(new CourierRespondResponseDTO(null, "Contract not found"));
             }
             if (!contract.getCourierId().equals(courierId)) {
-                return ResponseEntity.status(403).body(new CourierRespondResponse(null, "Unauthorized"));
+                return ResponseEntity.status(403).body(new CourierRespondResponseDTO(null, "Unauthorized"));
             }
-            Product product = productTable.getItem(r -> r.key(Key.builder().partitionValue(contract.getProductId()).build()));
+            Product product = productRepository.getProductById(contract.getProductId());
             if (product == null) {
-                return ResponseEntity.status(404).body(new CourierRespondResponse(null, "Product not found"));
+                return ResponseEntity.status(404).body(new CourierRespondResponseDTO(null, "Product not found"));
             }
             if (!product.getStatus().equals("COURIER_UNASSIGNED") || !contract.getStatus().equals("COURIER_ACCEPTANCE_PENDING")) {
-                return ResponseEntity.status(400).body(new CourierRespondResponse(null, "Product is not in acceptance pending state"));
+                return ResponseEntity.status(400).body(new CourierRespondResponseDTO(null, "Product is not in acceptance pending state"));
             }
             contract.setDeliveryCharge(deliveryCharge);
             contract.setStatus("ACTIVE");
             product.setStatus("ACTIVE");
-            contractTable.updateItem(contract);
-            productTable.updateItem(product);
-            return ResponseEntity.ok(new CourierRespondResponse(contract, "Contract accepted successfully"));
+            contractRepository.updateContract(contract);
+            productRepository.updateProduct(product);
+            return ResponseEntity.ok(new CourierRespondResponseDTO(contract, "Contract accepted successfully"));
         } catch (Exception e) {
             System.out.println(e.getMessage());
-            return ResponseEntity.status(400).body(new CourierRespondResponse(null, e.getMessage()));
+            return ResponseEntity.status(400).body(new CourierRespondResponseDTO(null, e.getMessage()));
         }
     }
 
-    public ResponseEntity<CourierRespondResponse> rejectContract(String accessToken, String contractId) {
+    public ResponseEntity<CourierRespondResponseDTO> rejectContract(String accessToken, String contractId) {
         try {
             WrappedUser wrappedUser = authFacade.getWrappedUser(accessToken);
             String courierId = authFacade.getCognitoUsername(wrappedUser);
-            Contract contract = contractTable.getItem(r -> r.key(Key.builder().partitionValue(contractId).build()));
+            Contract contract = contractRepository.getContractById(contractId);
             if (contract == null) {
-                return ResponseEntity.status(404).body(new CourierRespondResponse(null, "Contract not found"));
+                return ResponseEntity.status(404).body(new CourierRespondResponseDTO(null, "Contract not found"));
             }
             if (!contract.getCourierId().equals(courierId)) {
-                return ResponseEntity.status(403).body(new CourierRespondResponse(null, "Unauthorized"));
+                return ResponseEntity.status(403).body(new CourierRespondResponseDTO(null, "Unauthorized"));
             }
-            Product product = productTable.getItem(r -> r.key(Key.builder().partitionValue(contract.getProductId()).build()));
+            Product product = productRepository.getProductById(contract.getProductId());
             if (product == null) {
-                return ResponseEntity.status(404).body(new CourierRespondResponse(null, "Product not found"));
+                return ResponseEntity.status(404).body(new CourierRespondResponseDTO(null, "Product not found"));
             }
             if (!product.getStatus().equals("COURIER_UNASSIGNED") || !contract.getStatus().equals("COURIER_ACCEPTANCE_PENDING")) {
-                return ResponseEntity.status(400).body(new CourierRespondResponse(null, "Product is not in acceptance pending state"));
+                return ResponseEntity.status(400).body(new CourierRespondResponseDTO(null, "Product is not in acceptance pending state"));
             }
             contract.setStatus("COURIER_REJECTED");
-            contractTable.updateItem(contract);
-            return ResponseEntity.ok(new CourierRespondResponse(contract, "Contract rejected successfully"));
+            contractRepository.updateContract(contract);
+            return ResponseEntity.ok(new CourierRespondResponseDTO(contract, "Contract rejected successfully"));
         } catch (Exception e) {
             System.out.println(e.getMessage());
-            return ResponseEntity.status(400).body(new CourierRespondResponse(null, e.getMessage()));
+            return ResponseEntity.status(400).body(new CourierRespondResponseDTO(null, e.getMessage()));
         }
     }
 
-    public ResponseEntity<CourierRespondResponse> cancelContract(String accessToken, String contractId) {
+    public ResponseEntity<CourierRespondResponseDTO> cancelContract(String accessToken, String contractId) {
         try {
             WrappedUser wrappedUser = authFacade.getWrappedUser(accessToken);
             String courierId = authFacade.getCognitoUsername(wrappedUser);
-            Contract contract = contractTable.getItem(r -> r.key(Key.builder().partitionValue(contractId).build()));
+            Contract contract = contractRepository.getContractById(contractId);
             if (contract == null) {
-                return ResponseEntity.status(404).body(new CourierRespondResponse(null, "Contract not found"));
+                return ResponseEntity.status(404).body(new CourierRespondResponseDTO(null, "Contract not found"));
             }
             if (!contract.getCourierId().equals(courierId)) {
-                return ResponseEntity.status(403).body(new CourierRespondResponse(null, "Unauthorized"));
+                return ResponseEntity.status(403).body(new CourierRespondResponseDTO(null, "Unauthorized"));
             }
-            Product product = productTable.getItem(r -> r.key(Key.builder().partitionValue(contract.getProductId()).build()));
+            Product product = productRepository.getProductById(contract.getProductId());
             if (product == null) {
-                return ResponseEntity.status(404).body(new CourierRespondResponse(null, "Product not found"));
+                return ResponseEntity.status(404).body(new CourierRespondResponseDTO(null, "Product not found"));
             }
             if (!product.getStatus().equals("ACTIVE") || !contract.getStatus().equals("ACTIVE")) {
                 return ResponseEntity.status(400).body(null);
             }
             contract.setStatus("COURIER_CANCELLED");
             product.setStatus("COURIER_UNASSIGNED");
-            contractTable.updateItem(contract);
-            productTable.updateItem(product);
-            return ResponseEntity.ok(new CourierRespondResponse(contract, "Contract cancelled successfully"));
+            contractRepository.updateContract(contract);
+            productRepository.updateProduct(product);
+            return ResponseEntity.ok(new CourierRespondResponseDTO(contract, "Contract cancelled successfully"));
         } catch (Exception e) {
             System.out.println(e.getMessage());
-            return ResponseEntity.status(400).body(new CourierRespondResponse(null, e.getMessage()));
+            return ResponseEntity.status(400).body(new CourierRespondResponseDTO(null, e.getMessage()));
         }
     }
 
-    public ResponseEntity<CourierChangeResponse> removeContract(String accessToken, String contractId) {
+    public ResponseEntity<CourierChangeResponseDTO> removeContract(String accessToken, String contractId) {
         try {
             WrappedUser wrappedUser = authFacade.getWrappedUser(accessToken);
             String sellerId = authFacade.getCognitoUsername(wrappedUser);
-            Contract contract = contractTable.getItem(r -> r.key(Key.builder().partitionValue(contractId).build()));
+            Contract contract = contractRepository.getContractById(contractId);
             if (contract == null) {
-                return ResponseEntity.status(404).body(new CourierChangeResponse(null, "Contract not found"));
+                return ResponseEntity.status(404).body(new CourierChangeResponseDTO(null, "Contract not found"));
             }
             if (!contract.getSellerId().equals(sellerId)) {
-                return ResponseEntity.status(403).body(new CourierChangeResponse(null, "Unauthorized"));
+                return ResponseEntity.status(403).body(new CourierChangeResponseDTO(null, "Unauthorized"));
             }
-            Product product = productTable.getItem(r -> r.key(Key.builder().partitionValue(contract.getProductId()).build()));
+            Product product = productRepository.getProductById(contract.getProductId());
             if (product == null) {
-                return ResponseEntity.status(404).body(new CourierChangeResponse(null, "Product not found"));
+                return ResponseEntity.status(404).body(new CourierChangeResponseDTO(null, "Product not found"));
             }
             if (product.getContractId() != null && product.getContractId().equals(contractId)) {
                 product.setCourierId(null);
                 product.setContractId(null);
                 product.setStatus("COURIER_UNASSIGNED");
-                productTable.updateItem(product);
+                productRepository.updateProduct(product);
             }
-            contractTable.deleteItem(r -> r.key(Key.builder().partitionValue(contractId).build()));
-            return ResponseEntity.status(204).body(new CourierChangeResponse(product, "Contract removed successfully"));
+            contractRepository.deleteContract(contractId);
+            return ResponseEntity.status(204).body(new CourierChangeResponseDTO(product, "Contract removed successfully"));
         } catch (Exception e) {
             System.out.println(e.getMessage());
-            return ResponseEntity.status(400).body(new CourierChangeResponse(null, e.getMessage()));
+            return ResponseEntity.status(400).body(new CourierChangeResponseDTO(null, e.getMessage()));
         }
     }
 
-    public ResponseEntity<CourierRespondResponse> updateDeliveryCharge(String accessToken, String contractId, float deliveryCharge) {
+    public ResponseEntity<CourierRespondResponseDTO> updateDeliveryCharge(String accessToken, String contractId, float deliveryCharge) {
         try {
             WrappedUser wrappedUser = authFacade.getWrappedUser(accessToken);
             String courierId = authFacade.getCognitoUsername(wrappedUser);
-            Contract contract = contractTable.getItem(r -> r.key(Key.builder().partitionValue(contractId).build()));
+            Contract contract = contractRepository.getContractById(contractId);
             if (contract == null) {
-                return ResponseEntity.status(404).body(new CourierRespondResponse(null, "Contract not found"));
+                return ResponseEntity.status(404).body(new CourierRespondResponseDTO(null, "Contract not found"));
             }
             if (!contract.getCourierId().equals(courierId)) {
-                return ResponseEntity.status(403).body(new CourierRespondResponse(null, "Unauthorized"));
+                return ResponseEntity.status(403).body(new CourierRespondResponseDTO(null, "Unauthorized"));
             }
             contract.setDeliveryCharge(deliveryCharge);
-            contractTable.updateItem(contract);
-            return ResponseEntity.ok(new CourierRespondResponse(contract, "Delivery charge updated successfully"));
+            contractRepository.updateContract(contract);
+            return ResponseEntity.ok(new CourierRespondResponseDTO(contract, "Delivery charge updated successfully"));
         } catch (Exception e) {
             System.out.println(e.getMessage());
-            return ResponseEntity.status(400).body(new CourierRespondResponse(null, e.getMessage()));
+            return ResponseEntity.status(400).body(new CourierRespondResponseDTO(null, e.getMessage()));
         }
     }
 
@@ -265,19 +259,11 @@ public class ContractService {
             String userRole = authFacade.getRole(wrappedUser);
             if (userRole.equals("SELLER")) {
                 String sellerId = authFacade.getCognitoUsername(wrappedUser);
-                PageIterable<Contract> contractsOfSeller = (PageIterable<Contract>) contractTableSellerIndex.query(r -> r.queryConditional(keyEqualTo(k -> k.partitionValue(sellerId))));
-                List<Contract> contracts = new ArrayList<>();
-                for (Contract contract : contractsOfSeller.items()) {
-                    contracts.add(contract);
-                }
+                List<Contract> contracts = contractRepository.getContractsBySellerId(sellerId);
                 return ResponseEntity.ok(contracts);
             } else if (userRole.equals("COURIER")) {
                 String courierId = authFacade.getCognitoUsername(wrappedUser);
-                PageIterable<Contract> contractsOfCourier = (PageIterable<Contract>) contractTableCourierIndex.query(r -> r.queryConditional(keyEqualTo(k -> k.partitionValue(courierId))));
-                List<Contract> contracts = new ArrayList<>();
-                for (Contract contract : contractsOfCourier.items()) {
-                    contracts.add(contract);
-                }
+                List<Contract> contracts = contractRepository.getContractsByCourierId(courierId);
                 return ResponseEntity.ok(contracts);
             } else {
                 return ResponseEntity.status(403).body(null);
@@ -289,20 +275,20 @@ public class ContractService {
 
     }
 
-    private PopulatedContract getPopulatedContract(Contract contract) {
-        Product product = productTable.getItem(r -> r.key(Key.builder().partitionValue(contract.getProductId()).build()));
+    private PopulatedContractDTO getPopulatedContract(Contract contract) {
+        Product product = productRepository.getProductById(contract.getProductId());
         Courier courier = restTemplate.getForObject("http://USER-SERVICE/api/couriers/" + contract.getCourierId(), Courier.class);
         Seller seller = restTemplate.getForObject("http://USER-SERVICE/api/sellers/" + contract.getSellerId(), Seller.class);
-        return new PopulatedContract(contract.getId(), product, seller, courier, contract.getDeliveryCharge(), contract.getStatus());
+        return new PopulatedContractDTO(contract.getId(), product, seller, courier, contract.getDeliveryCharge(), contract.getStatus());
     }
 
-    public ResponseEntity<PopulatedContract> getContract(String contractId, String accessToken) {
+    public ResponseEntity<PopulatedContractDTO> getContract(String contractId, String accessToken) {
         try {
             WrappedUser wrappedUser = authFacade.getWrappedUser(accessToken);
             String userRole = authFacade.getRole(wrappedUser);
             if (userRole.equals("SELLER")) {
                 String sellerId = authFacade.getCognitoUsername(wrappedUser);
-                Contract contract = contractTable.getItem(r -> r.key(Key.builder().partitionValue(contractId.toString()).build()));
+                Contract contract = contractRepository.getContractById(contractId);
                 if (contract == null) {
                     return ResponseEntity.status(404).body(null);
                 }
@@ -312,7 +298,7 @@ public class ContractService {
                 return ResponseEntity.ok(getPopulatedContract(contract));
             } else if (userRole.equals("COURIER")) {
                 String courierId = authFacade.getCognitoUsername(wrappedUser);
-                Contract contract = contractTable.getItem(r -> r.key(Key.builder().partitionValue(contractId.toString()).build()));
+                Contract contract = contractRepository.getContractById(contractId);
                 if (contract == null) {
                     return ResponseEntity.status(404).body(null);
                 }
