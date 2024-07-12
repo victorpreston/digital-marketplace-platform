@@ -52,4 +52,13 @@ public class ProductPublicController {
         return responseEntity;
     }
 
+    @GetMapping("/{id}/unmodified")
+    public ResponseEntity<Product> getUnmodifiedProduct(@PathVariable("id") String id) {
+        ResponseEntity<Product> responseEntity = productService.getRawProduct(id);
+        if (responseEntity.getBody() == null) {
+            return ResponseEntity.status(404).body(null);
+        }
+        return responseEntity;
+    }
+
 }

@@ -218,4 +218,20 @@ public class ProductService {
         }
     }
 
+    public ResponseEntity<Product> getRawProduct(String id) {
+        try {
+            Product product = productTable.getItem(r -> r.key(Key.builder().partitionValue(id).build()));
+            if (product == null) {
+                return ResponseEntity.status(404).body(null);
+            }
+            if (product.getStatus().equals("INACTIVE")) {
+                return ResponseEntity.status(404).body(null);
+            }
+            return ResponseEntity.ok(product);
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            return ResponseEntity.status(400).body(null);
+        }
+    }
+
 }
