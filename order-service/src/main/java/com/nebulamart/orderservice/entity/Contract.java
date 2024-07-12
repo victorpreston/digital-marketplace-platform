@@ -11,33 +11,18 @@ import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbSecon
 @AllArgsConstructor
 @NoArgsConstructor
 @DynamoDbBean
-public class Review {
+public class Contract {
 
     private String id;
     private String productId;
     private String sellerId;
     private String courierId;
-    private String orderId;
-    private String customerId;
-    private String productReview;
-    private String courierReview;
-    private int productRating;
-    private int courierRating;
-    private String createdAt;
+    private float deliveryCharge;
+    private String status;
 
     @DynamoDbPartitionKey
     public String getId() {
         return id;
-    }
-
-    @DynamoDbSecondaryPartitionKey(indexNames = { "product-index" })
-    public String getProductId() {
-        return productId;
-    }
-
-    @DynamoDbSecondaryPartitionKey(indexNames = { "seller-index" })
-    public String getSellerId() {
-        return sellerId;
     }
 
     @DynamoDbSecondaryPartitionKey(indexNames = { "courier-index" })
@@ -45,4 +30,9 @@ public class Review {
         return courierId;
     }
 
+    @DynamoDbSecondaryPartitionKey(indexNames = { "seller-index" })
+    public String getSellerId() {
+        return sellerId;
+    }
 }
+
