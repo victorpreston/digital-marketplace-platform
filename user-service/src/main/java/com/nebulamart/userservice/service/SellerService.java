@@ -1,6 +1,7 @@
 package com.nebulamart.userservice.service;
 
 import com.nebulamart.userservice.entity.Seller;
+import com.nebulamart.userservice.repository.SellerRepository;
 import com.nebulamart.userservice.template.SellerSignUpDTO;
 import com.nebulamart.userservice.template.SellerSignUpResponseDTO;
 import com.nebulamart.userservice.template.SellerUpdateDTO;
@@ -12,8 +13,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
-import software.amazon.awssdk.enhanced.dynamodb.Key;
 import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.*;
 import java.util.ArrayList;
@@ -22,7 +21,7 @@ import java.util.List;
 @Service
 public class SellerService {
     private final CognitoIdentityProviderClient cognitoClient;
-    private final DynamoDbTable<Seller> sellerTable;
+    private final SellerRepository sellerRepository;
     private final AuthFacade authFacade;
 
     @Value("${aws-cognito.user-pool-id}")
@@ -35,9 +34,9 @@ public class SellerService {
     private String clientSecret;
 
     @Autowired
-    public SellerService(CognitoIdentityProviderClient cognitoClient, DynamoDbTable<Seller> sellerTable, AuthFacade authFacade) {
+    public SellerService(CognitoIdentityProviderClient cognitoClient, SellerRepository sellerRepository, AuthFacade authFacade) {
         this.cognitoClient = cognitoClient;
-        this.sellerTable = sellerTable;
+        this.sellerRepository = sellerRepository;
         this.authFacade = authFacade;
     }
 
@@ -57,7 +56,7 @@ public class SellerService {
             SignUpResponse result = cognitoClient.signUp(signUpRequest);
             String userId = result.userSub();
             Seller seller = new Seller(userId, sellerSignUpDTO.getName(), sellerSignUpDTO.getEmail(), sellerSignUpDTO.getContactNumber(), sellerSignUpDTO.getAddress(), sellerSignUpDTO.getLogoUrl());
-            sellerTable.putItem(seller);
+            sellerRepository.saveSeller(seller);
             return ResponseEntity.ok(new SellerSignUpResponseDTO(seller));
         } catch (Exception e) {
             System.out.println(e.getMessage());
@@ -92,7 +91,7 @@ public class SellerService {
                 if (sellerUpdateDTO.getLogoUrl() != null) {
                     seller.setLogoUrl(sellerUpdateDTO.getLogoUrl());
                 }
-                sellerTable.putItem(seller);
+                sellerRepository.updateSeller(seller);
                 return ResponseEntity.ok(new SellerUpdateResponseDTO(seller));
             }
             return ResponseEntity.status(400).body(new SellerUpdateResponseDTO(null, "Seller not found"));
@@ -104,8 +103,7 @@ public class SellerService {
 
     public Seller getSeller(String id) {
         try {
-            Key key = Key.builder().partitionValue(id).build();
-            return sellerTable.getItem(r -> r.key(key));
+            return sellerRepository.getSellerById(id);
         } catch (Exception e) {
             System.out.println(e.getMessage());
             return null;
