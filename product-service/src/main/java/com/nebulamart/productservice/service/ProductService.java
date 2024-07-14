@@ -43,27 +43,19 @@ public class ProductService {
     }
 
     private PopulatedProductDTO populateProduct(Product product) {
-        try {
-            Courier courier = restTemplate.getForObject("http://USER-SERVICE/api/couriers/" + product.getCourierId(), Courier.class);
-            Seller seller = restTemplate.getForObject("http://USER-SERVICE/api/sellers/" + product.getSellerId(), Seller.class);
-            Contract contract = contractRepository.getContractById(product.getContractId());
-            return new PopulatedProductDTO(product.getId(), product.getName(), product.getDescription(), product.getBrand(), product.getImageUrls(), product.getCategory(), product.getStock(), product.getBasePrice(), product.getDiscount(), product.getRating(), product.getRatingCount(), seller, courier, contract.getDeliveryCharge(), product.getStatus(), product.getCreatedDate(), product.getLastUpdatedDate());
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
-            return null;
-        }
+        Courier courier = restTemplate.getForObject("http://USER-SERVICE/api/couriers/" + product.getCourierId(), Courier.class);
+        Seller seller = restTemplate.getForObject("http://USER-SERVICE/api/sellers/" + product.getSellerId(), Seller.class);
+        Contract contract = contractRepository.getContractById(product.getContractId());
+        return new PopulatedProductDTO(product.getId(), product.getName(), product.getDescription(), product.getBrand(), product.getImageUrls(), product.getCategory(), product.getStock(), product.getBasePrice(), product.getDiscount(), product.getRating(), product.getRatingCount(), seller, courier, contract.getDeliveryCharge(), product.getStatus(), product.getCreatedDate(), product.getLastUpdatedDate());
     }
 
-    private FullyPopulatedProductDTO fullyPopulateProduct(Product product) {
-        try {
-            Courier courier = restTemplate.getForObject("http://USER-SERVICE/api/couriers/" + product.getCourierId(), Courier.class);
-            Seller seller = restTemplate.getForObject("http://USER-SERVICE/api/sellers/" + product.getSellerId(), Seller.class);
-            Contract contract = contractRepository.getContractById(product.getContractId());
-            return new FullyPopulatedProductDTO(product.getId(), product.getName(), product.getDescription(), product.getBrand(), product.getImageUrls(), product.getCategory(), product.getStock(), product.getBasePrice(), product.getDiscount(), product.getRating(), product.getRatingCount(), seller, courier, contract, product.getStatus(), product.getCreatedDate(), product.getLastUpdatedDate());
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
-            return null;
+    private ContractPopulatedProductDTO ContractPopulatedProduct(Product product) {
+        if (product.getContractId() == null) {
+            return new ContractPopulatedProductDTO(product.getId(), product.getName(), product.getDescription(), product.getBrand(), product.getImageUrls(), product.getCategory(), product.getStock(), product.getBasePrice(), product.getDiscount(), product.getRating(), product.getRatingCount(), null, null, product.getStatus(), product.getCreatedDate(), product.getLastUpdatedDate());
         }
+        Courier courier = restTemplate.getForObject("http://USER-SERVICE/api/couriers/" + product.getCourierId(), Courier.class);
+        Contract contract = contractRepository.getContractById(product.getContractId());
+        return new ContractPopulatedProductDTO(product.getId(), product.getName(), product.getDescription(), product.getBrand(), product.getImageUrls(), product.getCategory(), product.getStock(), product.getBasePrice(), product.getDiscount(), product.getRating(), product.getRatingCount(), courier, contract, product.getStatus(), product.getCreatedDate(), product.getLastUpdatedDate());
     }
 
     public ResponseEntity<ProductCreateResponseDTO> createProduct(String accessToken, ProductCreateDTO productCreateDTO) {
@@ -184,7 +176,7 @@ public class ProductService {
         }
     }
 
-    public ResponseEntity<FullyPopulatedProductDTO> getProductAsAdmin(String id, String accessToken) {
+    public ResponseEntity<ContractPopulatedProductDTO> getProductAsSeller(String id, String accessToken) {
         try {
             WrappedUser wrappedUser = authFacade.getWrappedUser(accessToken);
             String sellerId = authFacade.getCognitoUsername(wrappedUser);
@@ -195,7 +187,7 @@ public class ProductService {
             if (!product.getSellerId().equals(sellerId)) {
                 return ResponseEntity.status(403).body(null);
             }
-            return ResponseEntity.ok(fullyPopulateProduct(product));
+            return ResponseEntity.ok(ContractPopulatedProduct(product));
         } catch (Exception e) {
             System.out.println(e.getMessage());
             return ResponseEntity.status(400).body(null);

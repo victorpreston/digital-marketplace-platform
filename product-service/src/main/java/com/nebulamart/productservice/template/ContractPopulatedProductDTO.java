@@ -2,7 +2,6 @@ package com.nebulamart.productservice.template;
 
 import com.nebulamart.productservice.entity.Contract;
 import com.nebulamart.productservice.entity.Courier;
-import com.nebulamart.productservice.entity.Seller;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -10,7 +9,7 @@ import java.util.List;
 
 @Data
 @AllArgsConstructor
-public class FullyPopulatedProductDTO {
+public class ContractPopulatedProductDTO {
 
     private String id;
     private String name;
@@ -24,7 +23,6 @@ public class FullyPopulatedProductDTO {
     private float discount;
     private float rating;
     private int ratingCount;
-    private Seller seller;
     private Courier courier;
     private Contract contract;
     private String status;
