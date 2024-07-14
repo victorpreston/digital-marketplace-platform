@@ -1,65 +1,212 @@
 
-POST /api/user-service/auth/sign-up/customer
-{
-    "name": "Sharada Weerasinghe",
-    "email": "sharadashehan6@gmail.com",
-	"password": "Key@1234",
-    "contactNumber": "+94781748749",
-    "address": "No.142, Samagi Mawatha, Bemmulla"
+POST /api/auth/sign-up/customer
+Request Body : {
+    "name": "user_name",
+    "email": "user_email",
+	"password": "password",
+    "contactNumber": "mobile_number",
+    "address": "user_address"
 }
 
-POST /api/user-service/auth/sign-up/seller
-{
-    "name": "IT Corp",
-    "email": "sharadaw.21@cse.mrt.ac.lk",
-    "password": "Key@1234",
-    "contactNumber": "+94781748749",
-    "address": "No.34, Kirulapona Road, Colombo"
+POST /api/auth/sign-up/seller
+Request Body : {
+    "name": "seller_name",
+    "email": "seller_email",
+    "password": "password",
+    "contactNumber": "mobile_number",
+    "address": "seller_address"
 }
 
-POST /api/user-service/auth/sign-up/courier
-{
-    "name": "Speedo Delivery",
-    "email": "weerasinghemss.21@uom.lk",
-    "password": "Key@1234",
-    "contactNumber": "+94781748749"
+POST /api/auth/sign-up/courier
+Request Body : {
+    "name": "courier_name",
+    "email": "courier_email",
+    "password": "password",
+    "contactNumber": "mobile_number",
 }
 
-GET /api/user-service/auth/verify-account?email=sharadashehan6@gmail.com&code=975195
+GET /api/auth/verify-account?email=sharadashehan6@gmail.com&code=975195
 
-POST /api/user-service/auth/sign-in
-{
-"email": "sharadaw.21@cse.mrt.ac.lk",
-"password": "Key@1234"
+POST /api/auth/sign-in
+Request Body : {
+"email": "user_email",
+"password": "password"
 }
 
-GET /api/user-service/customer/account
-GET /api/user-service/seller/account
-GET /api/user-service/courier/account
+GET /api/user/sign-out
+Any User Id Token Required
 
-PATCH /api/user-service/customer/account
-{
-    "name": "Sharada Shehan Weerasinghe"
+GET /api/customer/account
+Customer Id Token Required
+
+GET /api/seller/account
+Seller Id Token Required
+
+GET /api/courier/account
+Courier Id Token Required
+
+PATCH /api/customer/account
+Customer Id Token Required
+Request Body : {
+    "name": "new_customer_name"
 }
 
-PATCH /api/user-service/seller/account
-{
-    "name": "IT Corporation"
+PATCH /api/seller/account
+Seller Id Token Required
+Request Body : {
+    "name": "new_seller_name"
 }
 
-PATCH /api/user-service/courier/account
-{
-    "contactNumber": "+94781748748"
+PATCH /api/courier/account
+Courier Id Token Required
+Request Body : {
+    "contactNumber": "new_mobile_number"
 }
 
-GET /api/user-service/open/sellers/{id}
-GET /api/user-service/open/couriers/{id}
+GET /api/sellers/{seller_id}
 
-POST /user/change-password
-{
-    "newPassword": "Key@1234",
-    "oldPassword": "Apple@1234"
+GET /api/couriers/{courier_id}
+
+POST /api/user/change-password
+Any User Id Token Required
+Request Body : {
+    "newPassword": "new_password",
+    "oldPassword": "old_password"
 }
 
-GET /api/user-service/seller/couriers
+GET /api/seller/couriers-list
+Seller Id Token Required
 
+GET /api/logo-upload-url?extension=jpg
+
+GET /api/product/upload-url?extension=jpg
+Seller Id Token Required
+
+POST /api/product/create
+Seller Id Token Required
+Request Body : {
+    "name": "product_name",
+    "description": "product_description",
+    "brand": "product_brand",
+    "imageUrls": [],
+    "category": "ELECTRONICS",
+    "stock": 10,
+    "basePrice": 200000,
+    "discount": 0
+}
+
+PATCH /api/product/{product_id}
+Seller Id Token Required
+Request Body : {
+    "description": "new_description"
+}
+
+DELETE /api/product/{product_id}
+Seller Id Token Required
+
+GET /api/product/{product_id}
+Seller Id Token Required
+
+GET /api/products?page={page_number}
+
+GET /api/products/search?page={page_number}&category={category}&text={search_texr}&minPrice={minimum_price}&maxPrice={maximum_price}
+
+GET /api/products/{product_id}
+
+GET /api/products/{product_id}/unmodified
+
+GET /api/contracts
+Seller or Courier Id Token Required
+
+GET /api/contracts/{contract_id}
+Seller or Courier Id Token Required
+
+POST /api/contract/seller/add-courier
+Seller Id Token Required
+Request Body : {
+    "productId": "product_id",
+    "courierId": "courier_id"
+}
+
+DELETE /api/contract/seller/remove-courier/{product_id}
+Seller Id Token Required
+
+POST /api/contract/seller/change-courier
+Seller Id Token Required
+Request Body : {
+    "productId": "product_id",
+    "courierId": "courier_id"
+}
+
+DELETE /api/contract/seller/delete-contract/{contract_id}
+Seller Id Token Required
+
+POST /api/contract/courier/respond
+Courier Id Token Required
+Request Body : {
+    "contractId": "contract_id",
+    "accept": true,
+    "deliveryCharge": 200
+}	or	{
+    "contractId": "contract_id",
+    "accept": false
+}
+
+GET /api/contract/courier/cancel-contract/{contract_id}
+Courier Id Token Required
+
+PATCH /api/contract/courier/update-contract/{contract_id}
+Courier Id Token Required
+Request Body : {
+    "deliveryCharge": 200
+}
+
+GET /api/order/customer/create
+Customer Id Token Required
+Request Body : {
+    "orders": [
+        {
+            "productId": "product_id",
+            "quantity": 2
+        }
+    ],
+    "deliveryAddress": "delivery_address",
+    "paymentId": "234436t7688",
+    "amountPaid": 2400
+}
+
+GET /api/order/customer/cancel/{order_id}
+Customer Id Token Required
+
+GET /api/orders/
+Any User Id Token Required (customer, seller, courier)
+
+GET /api/orders/{order_id}
+Any associated User Id Token Required (buyer, seller, courier)
+
+GET /api/order/seller/orders?productId={product_id}
+Seller Id Token Required
+
+PATCH /api/order/courier/update-dispatched/{order_id}
+Courier Id Token Required
+
+PATCH /api/order/courier/update-delivered/{order_id}
+Courier Id Token Required
+
+POST /api/review/create
+Customer Id Token Required
+Request Body : {
+    "orderId": "order_id",
+    "productReview": "Prodduct is working well",
+    "courierReview": "Bit delayed delivery",
+    "productRating": 5,
+    "courierRating": 4
+}
+
+GET /api/reviews?productId={product_id}
+or
+GET /api/reviews?sellerId={seller_id}
+or
+GET /api/reviews?courierId={courier_id}
+
+GET /api/reviews/{review_id}
