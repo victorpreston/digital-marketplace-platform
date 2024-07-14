@@ -70,9 +70,9 @@ public class ProductController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<FullyPopulatedProductDTO> getProduct(@PathVariable("id") String id, @RequestHeader("Authorization") String accessToken) {
-        ResponseEntity<FullyPopulatedProductDTO> responseEntity = productService.getProductAsAdmin(id, accessToken);
-        if (responseEntity.getBody() == null) {
+    public ResponseEntity<ContractPopulatedProductDTO> getProduct(@PathVariable("id") String id, @RequestHeader("Authorization") String accessToken) {
+        ResponseEntity<ContractPopulatedProductDTO> responseEntity = productService.getProductAsSeller(id, accessToken);
+        if (responseEntity == null) {
             return ResponseEntity.status(404).body(null);
         }
         return responseEntity;

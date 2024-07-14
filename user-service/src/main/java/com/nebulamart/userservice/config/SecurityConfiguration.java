@@ -45,7 +45,7 @@ public class SecurityConfiguration {
                         .requestMatchers("/couriers/**").permitAll()
                 )
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/upload-url").permitAll()
+                        .requestMatchers("/logo-upload-url").permitAll()
                 )
                 .authorizeHttpRequests(authorize -> authorize
                         .anyRequest().authenticated()
