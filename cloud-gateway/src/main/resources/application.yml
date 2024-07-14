@@ -14,7 +14,7 @@ spring:
         - id: USER-SERVICE
           uri: lb://USER-SERVICE
           predicates:
-            - Path=/api/customer/**, /api/courier/**, /api/seller/**, /api/user/**, /api/auth/**, /api/couriers/**, /api/sellers/**, /api/upload-url
+            - Path=/api/customer/**, /api/courier/**, /api/seller/**, /api/user/**, /api/auth/**, /api/couriers/**, /api/sellers/**, /api/logo-upload-url
         - id: ORDER-SERVICE
           uri: lb://ORDER-SERVICE
           predicates:
