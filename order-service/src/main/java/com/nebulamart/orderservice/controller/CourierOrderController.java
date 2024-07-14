@@ -17,7 +17,7 @@ public class CourierOrderController {
         this.orderService = orderService;
     }
 
-    @PatchMapping("dispatched/{orderId}")
+    @PatchMapping("update-dispatched/{orderId}")
     public ResponseEntity<OrderUpdateResponseDTO> getDispatchedOrder(@RequestHeader("Authorization") String accessToken, @PathVariable("orderId") String orderId) {
         ResponseEntity<OrderUpdateResponseDTO> responseEntity = orderService.setOrderDispatched(accessToken, orderId);
         if (responseEntity == null) {
@@ -26,7 +26,7 @@ public class CourierOrderController {
         return responseEntity;
     }
 
-    @PatchMapping("delivered/{orderId}")
+    @PatchMapping("update-delivered/{orderId}")
     public ResponseEntity<OrderUpdateResponseDTO> getDeliveredOrder(@RequestHeader("Authorization") String accessToken, @PathVariable("orderId") String orderId) {
         ResponseEntity<OrderUpdateResponseDTO> responseEntity = orderService.setOrderDelivered(accessToken, orderId);
         if (responseEntity == null) {
