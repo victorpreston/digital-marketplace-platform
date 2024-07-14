@@ -19,7 +19,7 @@ public class SellerOrderController {
         this.orderService = orderService;
     }
 
-    @GetMapping("")
+    @GetMapping("orders")
     public ResponseEntity<List<Order>> getOrders(@RequestHeader("Authorization") String accessToken, @PathParam("productId") String productId) {
         ResponseEntity<List<Order>> responseEntity = orderService.getOrdersByProduct(accessToken, productId);
         if (responseEntity == null) {
