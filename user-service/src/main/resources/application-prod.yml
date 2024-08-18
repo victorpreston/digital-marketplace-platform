@@ -1,0 +1,26 @@
+server:
+  port: ${PORT}
+  servlet:
+    context-path: /api
+
+spring:
+  application:
+    name: USER-SERVICE
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${ISSUER_URI}
+
+aws-cognito:
+  user-pool-id: ${USER_POOL_ID}
+  user-pool-client-id: ${USER_POOL_CLIENT_ID}
+  user-pool-client-secret: ${USER_POOL_CLIENT_SECRET}
+
+s3-bucket:
+    name: ${S3_BUCKET_NAME}
+
+aws-role-user:
+  access-key: ${AWS_ACCESS_KEY}
+  secret-key: ${AWS_SECRET_KEY}
+
