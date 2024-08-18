@@ -10,14 +10,13 @@ import com.nebulamart.productservice.template.*;
 import com.nebulamart.productservice.util.AuthFacade;
 import com.nebulamart.productservice.util.WrappedUser;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.enhanced.dynamodb.Key;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -29,6 +28,9 @@ public class ProductService {
     private final ProductRepository productRepository;
     private final ContractRepository contractRepository;
     private final int productsPerPage = 3; // Number of products to be displayed per page
+
+    @Value("${microservices.user-service-endpoint}")
+    private String userService;
 
     @Autowired
     public ProductService(AuthFacade authFacade, RestTemplate restTemplate, ProductRepository productRepository, ContractRepository contractRepository) {
@@ -43,8 +45,8 @@ public class ProductService {
     }
 
     private PopulatedProductDTO populateProduct(Product product) {
-        Courier courier = restTemplate.getForObject("http://USER-SERVICE/api/couriers/" + product.getCourierId(), Courier.class);
-        Seller seller = restTemplate.getForObject("http://USER-SERVICE/api/sellers/" + product.getSellerId(), Seller.class);
+        Courier courier = restTemplate.getForObject(userService + "/api/couriers/" + product.getCourierId(), Courier.class);
+        Seller seller = restTemplate.getForObject(userService + "/api/sellers/" + product.getSellerId(), Seller.class);
         Contract contract = contractRepository.getContractById(product.getContractId());
         return new PopulatedProductDTO(product.getId(), product.getName(), product.getDescription(), product.getBrand(), product.getImageUrls(), product.getCategory(), product.getStock(), product.getBasePrice(), product.getDiscount(), product.getRating(), product.getRatingCount(), seller, courier, contract.getDeliveryCharge(), product.getStatus(), product.getCreatedDate(), product.getLastUpdatedDate());
     }
@@ -53,7 +55,7 @@ public class ProductService {
         if (product.getContractId() == null) {
             return new ContractPopulatedProductDTO(product.getId(), product.getName(), product.getDescription(), product.getBrand(), product.getImageUrls(), product.getCategory(), product.getStock(), product.getBasePrice(), product.getDiscount(), product.getRating(), product.getRatingCount(), null, null, product.getStatus(), product.getCreatedDate(), product.getLastUpdatedDate());
         }
-        Courier courier = restTemplate.getForObject("http://USER-SERVICE/api/couriers/" + product.getCourierId(), Courier.class);
+        Courier courier = restTemplate.getForObject(userService + "/api/couriers/" + product.getCourierId(), Courier.class);
         Contract contract = contractRepository.getContractById(product.getContractId());
         return new ContractPopulatedProductDTO(product.getId(), product.getName(), product.getDescription(), product.getBrand(), product.getImageUrls(), product.getCategory(), product.getStock(), product.getBasePrice(), product.getDiscount(), product.getRating(), product.getRatingCount(), courier, contract, product.getStatus(), product.getCreatedDate(), product.getLastUpdatedDate());
     }

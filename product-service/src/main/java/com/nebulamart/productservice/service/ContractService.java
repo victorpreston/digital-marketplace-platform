@@ -10,6 +10,7 @@ import com.nebulamart.productservice.template.*;
 import com.nebulamart.productservice.util.AuthFacade;
 import com.nebulamart.productservice.util.WrappedUser;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -22,6 +23,9 @@ public class ContractService {
     private final ContractRepository contractRepository;
     private final AuthFacade authFacade;
     private final RestTemplate restTemplate;
+
+    @Value("${microservices.user-service-endpoint}")
+    private String userService;
 
     @Autowired
     public ContractService(ProductRepository productRepository, ContractRepository contractRepository, AuthFacade authFacade, RestTemplate restTemplate) {
@@ -42,7 +46,7 @@ public class ContractService {
             if (!product.getSellerId().equals(sellerId)) {
                 return ResponseEntity.status(403).body(new CourierChangeResponseDTO(null, "Unauthorized"));
             }
-            Courier courier = restTemplate.getForObject("http://USER-SERVICE/api/couriers/" + courierChangeDTO.getCourierId(), Courier.class);
+            Courier courier = restTemplate.getForObject(userService + "/api/couriers/" + courierChangeDTO.getCourierId(), Courier.class);
             if (courier == null) {
                 return ResponseEntity.status(400).body(new CourierChangeResponseDTO(null, "Courier not found"));
             }
@@ -99,7 +103,7 @@ public class ContractService {
             if (product.getContractId() == null) {
                 return ResponseEntity.status(400).body(new CourierChangeResponseDTO(null, "No contract found"));
             }
-            Courier courier = restTemplate.getForObject("http://USER-SERVICE/api/couriers/" + courierChangeDTO.getCourierId(), Courier.class);
+            Courier courier = restTemplate.getForObject(userService + "/api/couriers/" + courierChangeDTO.getCourierId(), Courier.class);
             if (courier == null) {
                 return ResponseEntity.status(400).body(new CourierChangeResponseDTO(null, "Courier not found"));
             }
@@ -277,8 +281,8 @@ public class ContractService {
 
     private PopulatedContractDTO getPopulatedContract(Contract contract) {
         Product product = productRepository.getProductById(contract.getProductId());
-        Courier courier = restTemplate.getForObject("http://USER-SERVICE/api/couriers/" + contract.getCourierId(), Courier.class);
-        Seller seller = restTemplate.getForObject("http://USER-SERVICE/api/sellers/" + contract.getSellerId(), Seller.class);
+        Courier courier = restTemplate.getForObject(userService + "/api/couriers/" + contract.getCourierId(), Courier.class);
+        Seller seller = restTemplate.getForObject(userService + "/api/sellers/" + contract.getSellerId(), Seller.class);
         return new PopulatedContractDTO(contract.getId(), product, seller, courier, contract.getDeliveryCharge(), contract.getStatus());
     }
 

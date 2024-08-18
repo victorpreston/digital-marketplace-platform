@@ -1,7 +1,6 @@
 package com.nebulamart.productservice.config;
 
 import com.nebulamart.productservice.entity.Contract;
-import com.nebulamart.productservice.entity.Courier;
 import com.nebulamart.productservice.entity.Product;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
