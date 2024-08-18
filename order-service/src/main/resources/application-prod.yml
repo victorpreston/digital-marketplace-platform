@@ -1,0 +1,23 @@
+server:
+  port: ${PORT}
+  servlet:
+    context-path: /api
+
+spring:
+  application:
+    name: ORDER-SERVICE
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${ISSUER_URI}
+
+aws-role-user:
+  access-key: ${AWS_ACCESS_KEY}
+  secret-key: ${AWS_SECRET_KEY}
+
+microservices:
+  user-service-endpoint: "http://${USER_SERVICE_HOST}:${USER_SERVICE_PORT}"
+  product-service-endpoint: "http://${PRODUCT_SERVICE_HOST}:${PRODUCT_SERVICE_PORT}"
+
+
