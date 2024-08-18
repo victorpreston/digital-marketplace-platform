@@ -1,0 +1,25 @@
+server:
+  port: ${PORT}
+  servlet:
+    context-path: /api
+
+spring:
+  application:
+    name: PRODUCT-SERVICE
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${ISSUER_URI}
+
+s3-bucket:
+  name: ${S3_BUCKET_NAME}
+
+aws-role-user:
+  access-key: ${AWS_ACCESS_KEY}
+  secret-key: ${AWS_SECRET_KEY}
+
+microservices:
+  user-service-endpoint: "http://${USER_SERVICE_HOST}:${USER_SERVICE_PORT}"
+
+
