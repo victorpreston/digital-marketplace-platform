@@ -30,3 +30,9 @@ product-service/src/main/resources/application.yml
 order-service/src/main/resources/application.yml
 config-server/src/main/resources/application.yml
 .env
+
+# minikube local deployment with environment variables
+minikube-deploy.yml
+
+# eks deployment with environment variables
+eks-deploy.yml
