@@ -34,5 +34,9 @@ config-server/src/main/resources/application.yml
 # minikube local deployment with environment variables
 minikube-deploy.yml
 
-# eks deployment with environment variables
-eks-deploy.yml
+# kubernetes config
+kubeconfig
+
+# temporary ignores
+iam_policy.json
+backendPipeline.groovy
