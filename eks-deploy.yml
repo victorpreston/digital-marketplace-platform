@@ -16,8 +16,8 @@ spec:
     spec:
       containers:
       - name: user-service-app-container
-        image: <USER_SERVICE_IMAGE>
-        imagePullPolicy: IfNotPresent
+        image: "058264124182.dkr.ecr.us-east-1.amazonaws.com/marketplace/user-service-image:latest"
+        imagePullPolicy: Always
         ports:
         - containerPort: 9001
           protocol: TCP
@@ -73,7 +73,7 @@ spec:
   - protocol: TCP
     port: 9001
     targetPort: 9001
-  type: LoadBalancer
+  type: ClusterIP
 
 # Product Service Deployment
 ---
@@ -94,8 +94,8 @@ spec:
     spec:
       containers:
       - name: product-service-app-container
-        image: <PRODUCT_SERVICE_IMAGE>
-        imagePullPolicy: IfNotPresent
+        image: "058264124182.dkr.ecr.us-east-1.amazonaws.com/marketplace/product-service-image:latest"
+        imagePullPolicy: Always
         ports:
         - containerPort: 9002
           protocol: TCP
@@ -140,7 +140,7 @@ spec:
   - protocol: TCP
     port: 9002
     targetPort: 9002
-  type: LoadBalancer
+  type: ClusterIP
 
 # Order Service Deployment
 ---
@@ -161,8 +161,8 @@ spec:
     spec:
       containers:
       - name: order-service-app-container
-        image: <ORDER_SERVICE_IMAGE>
-        imagePullPolicy: IfNotPresent
+        image: "058264124182.dkr.ecr.us-east-1.amazonaws.com/marketplace/order-service-image:latest"
+        imagePullPolicy: Always
         ports:
         - containerPort: 9003
           protocol: TCP
@@ -206,7 +206,7 @@ spec:
   - protocol: TCP
     port: 9003
     targetPort: 9003
-  type: LoadBalancer
+  type: ClusterIP
 
 # Ingress Configuration
 ---
@@ -218,7 +218,7 @@ metadata:
   annotations:
     alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/target-type: ip
-    alb.ingress.kubernetes.io/healthcheck-path: /api/products/117e2680-f8b3-4925-83e7-084cde015d7c
+    alb.ingress.kubernetes.io/healthcheck-path: /api/products
     alb.ingress.kubernetes.io/success-codes: '200'
     alb.ingress.kubernetes.io/healthcheck-interval-seconds: '60'
     alb.ingress.kubernetes.io/healthcheck-timeout-seconds: '10'
@@ -361,7 +361,7 @@ metadata:
   name: aws-secret
   namespace: default
 type: Opaque
-data:
+stringData:
   AWS_ACCESS_KEY: <AWS_ACCESS_KEY>
   AWS_SECRET_KEY: <AWS_SECRET_KEY>
   COGNITO_USER_POOL_CLIENT_SECRET: <COGNITO_USER_POOL_CLIENT_SECRET>
