@@ -17,7 +17,7 @@ spec:
       containers:
       - name: user-service-app-container
         image: <USER_SERVICE_IMAGE>
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 9001
           protocol: TCP
@@ -95,7 +95,7 @@ spec:
       containers:
       - name: product-service-app-container
         image: <PRODUCT_SERVICE_IMAGE>
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 9002
           protocol: TCP
@@ -162,7 +162,7 @@ spec:
       containers:
       - name: order-service-app-container
         image: <ORDER_SERVICE_IMAGE>
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 9003
           protocol: TCP
@@ -218,7 +218,6 @@ metadata:
   annotations:
     alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/target-type: ip
-    alb.ingress.kubernetes.io/load-balancer-name: pathbased-ingress
     alb.ingress.kubernetes.io/healthcheck-path: /api/products/117e2680-f8b3-4925-83e7-084cde015d7c
     alb.ingress.kubernetes.io/success-codes: '200'
     alb.ingress.kubernetes.io/healthcheck-interval-seconds: '60'
