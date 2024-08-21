@@ -73,7 +73,7 @@ spec:
   - protocol: TCP
     port: 9001
     targetPort: 9001
-  type: NodePort
+  type: LoadBalancer
 
 # Product Service Deployment
 ---
@@ -140,7 +140,7 @@ spec:
   - protocol: TCP
     port: 9002
     targetPort: 9002
-  type: NodePort
+  type: LoadBalancer
 
 # Order Service Deployment
 ---
@@ -206,7 +206,7 @@ spec:
   - protocol: TCP
     port: 9003
     targetPort: 9003
-  type: NodePort
+  type: LoadBalancer
 
 # Ingress Configuration
 ---
