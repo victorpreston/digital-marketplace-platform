@@ -36,7 +36,3 @@ minikube-deploy.yml
 
 # kubernetes config
 kubeconfig
-
-# temporary ignores
-iam_policy.json
-backendPipeline.groovy
