@@ -17,7 +17,7 @@ spec:
       containers:
       - name: user-service-app-container
         image: <USER_SERVICE_IMAGE>
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: Always
         ports:
         - containerPort: 9001
           protocol: TCP
@@ -95,7 +95,7 @@ spec:
       containers:
       - name: product-service-app-container
         image: <PRODUCT_SERVICE_IMAGE>
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: Always
         ports:
         - containerPort: 9002
           protocol: TCP
@@ -162,7 +162,7 @@ spec:
       containers:
       - name: order-service-app-container
         image: <ORDER_SERVICE_IMAGE>
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: Always
         ports:
         - containerPort: 9003
           protocol: TCP
