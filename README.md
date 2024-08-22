@@ -197,3 +197,8 @@
     - Upload the kubeconfig file created in step 7.
 
 11. Create a new pipeline job in Jenkins. In `jenkins-pipeline.groovy` file, replace environment variable values enclosed within <> with your values. Copy the content of the file and paste it in the pipeline script section of the Jenkins job. Save the job and run it.
+
+12. Get the Address of the Ingress controller, using the following command to access the application.
+    ```
+    kubectl get ingress
+    ```
