@@ -37,5 +37,3 @@ minikube-deploy.yml
 # kubernetes config
 kubeconfig
 
-# temporary ignores
-codepipeline-cicd.yml
