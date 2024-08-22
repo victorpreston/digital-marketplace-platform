@@ -19,8 +19,7 @@ pipeline {
         awsS3BucketName = "<AWS_S3_BUCKET_NAME>"
         awsUserAccessKey = "<AWS_USER_ACCESS_KEY>"
         awsUserSecretKey = "<AWS_USER_SECRET_KEY>"
-        gitHubKey = "<GITHUB_SSH_KEY_ID>"
-        gitHubUrl = "<GITHUB_REPO_SSH_URL>"
+        gitHubRepoUrl = "<GITHUB_REPO_SSH_URL>"
         gitHubBranch = "*/<GITHUB_BRANCH>"
     }
 
@@ -33,7 +32,7 @@ pipeline {
         // Cloning the Git repository
         stage('Cloning Git') {
             steps {
-                checkout([$class: 'GitSCM', branches: [[name: "*/${gitHubBranch}"]], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: "${gitHubKey}", url: "${gitHubUrl}"]]])
+                checkout([$class: 'GitSCM', branches: [[name: "*/${gitHubBranch}"]], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[url: "${gitHubRepoUrl}"]]])
             }
         }
 
