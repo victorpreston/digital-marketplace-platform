@@ -10,6 +10,9 @@ Parameters:
   GithubConnectionArn:
     Type: String
     Description: '<Connection ARN of the GitHub Repository>'
+  BackEndHost:
+    Type: String
+    Description: '<Backend URL>'
 
 Resources:
   CodePipeline:
@@ -171,6 +174,9 @@ Resources:
         ComputeType: BUILD_GENERAL1_SMALL
         Type: LINUX_CONTAINER
         Image: aws/codebuild/amazonlinux2-x86_64-standard:5.0
+        EnvironmentVariables:
+        - Name: BACKEND_HOST
+          Value: !Ref BackEndHost
       Source:
         Type: CODEPIPELINE
         BuildSpec: !Sub |
@@ -187,7 +193,8 @@ Resources:
             build:
               commands:
                 - echo Build started on `date`
-                - ng build
+                - sed -i "s|<BACKEND_URL>|http://$BACKEND_HOST|g" src/environments/environment.prod.ts
+                - ng build --configuration=production
             post_build:
               commands:
                 - echo Build completed on `date`
