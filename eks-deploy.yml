@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: user-service-app-container
-        image: "058264124182.dkr.ecr.us-east-1.amazonaws.com/marketplace/user-service-image:latest"
+        image: <USER_SERVICE_IMAGE>
         imagePullPolicy: Always
         ports:
         - containerPort: 9001
@@ -94,7 +94,7 @@ spec:
     spec:
       containers:
       - name: product-service-app-container
-        image: "058264124182.dkr.ecr.us-east-1.amazonaws.com/marketplace/product-service-image:latest"
+        image: <PRODUCT_SERVICE_IMAGE>
         imagePullPolicy: Always
         ports:
         - containerPort: 9002
@@ -161,7 +161,7 @@ spec:
     spec:
       containers:
       - name: order-service-app-container
-        image: "058264124182.dkr.ecr.us-east-1.amazonaws.com/marketplace/order-service-image:latest"
+        image: <ORDER_SERVICE_IMAGE>
         imagePullPolicy: Always
         ports:
         - containerPort: 9003
