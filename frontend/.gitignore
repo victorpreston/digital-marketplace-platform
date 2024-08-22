@@ -43,3 +43,6 @@ Thumbs.db
 
 # VScode
 .vscode
+
+# angular cache
+.angular
