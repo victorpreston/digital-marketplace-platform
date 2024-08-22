@@ -1,0 +1,247 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Parameters:
+  GithubRepo:
+    Type: String
+    Description: '<GitHub UserName>/<Github Repository Name>'
+  GithubBranch:
+    Type: String
+    Description: '<Branch Name of the GitHub Repository>'
+  GithubConnectionArn:
+    Type: String
+    Description: '<Connection ARN of the GitHub Repository>'
+  BackEndHost:
+    Type: String
+    Description: '<Backend URL>'
+
+Resources:
+  CodePipeline:
+    Type: 'AWS::CodePipeline::Pipeline'
+    Properties:
+      RoleArn: !GetAtt CodePipeLineRole.Arn
+      ArtifactStore:
+        Type: S3
+        Location: !Ref PipelineBucket
+      Stages:
+      # Source Stage
+      - Name: Source
+        Actions:
+        - Name: SourceAction
+          ActionTypeId:
+            Category: Source
+            Owner: AWS
+            Provider: CodeStarSourceConnection
+            Version: 1
+          OutputArtifacts:
+          - Name: SrcFiles
+          Configuration:
+            BranchName: !Ref GithubBranch
+            FullRepositoryId: !Ref GithubRepo
+            ConnectionArn: !Ref GithubConnectionArn
+      - Name: Build
+        # Build Stage
+        Actions:
+        - Name: BuildAction
+          ActionTypeId:
+            Category: Build
+            Owner: AWS
+            Provider: CodeBuild
+            Version: 1
+          InputArtifacts:
+          - Name: SrcFiles
+          OutputArtifacts:
+          - Name: BuiltFiles
+          Configuration:
+            ProjectName: Application-CodeBuild
+      - Name: Deploy
+        # Deploy Stage
+        Actions:
+        - Name: DeployAction
+          ActionTypeId:
+            Category: Deploy
+            Owner: AWS
+            Provider: S3
+            Version: 1
+          InputArtifacts:
+          - Name: BuiltFiles
+          Configuration:
+            BucketName: !Ref DeployBucket
+            Extract: true
+
+  CodeBuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - "codebuild.amazonaws.com"
+          Action:
+          - "sts:AssumeRole"
+      Path: /service-role/
+      Policies:
+      - PolicyName: root
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+          - Effect: Allow
+            Action:
+            - "s3:GetObject"
+            - "s3:GetObjectVersion"
+            - "s3:GetBucketVersioning"
+            - "s3:PutObject"
+            - "s3:PutObjectAcl"
+            - "s3:PutObjectVersionAcl"
+            Resource:
+            - !GetAtt PipelineBucket.Arn
+            - !Join ['', [!GetAtt PipelineBucket.Arn, "/*"]]
+          - Effect: Allow
+            Action:
+            - "s3:GetObject"
+            - "s3:GetObjectVersion"
+            - "s3:GetBucketVersioning"
+            - "s3:PutObject"
+            - "s3:PutObjectAcl"
+            - "s3:PutObjectVersionAcl"
+            Resource:
+            - !GetAtt DeployBucket.Arn
+            - !Join ['', [!GetAtt DeployBucket.Arn, "/*"]]
+          - Effect: Allow
+            Action:
+            - "logs:CreateLogGroup"
+            - "logs:CreateLogStream"
+            - "logs:PutLogEvents"
+            - "cloudfront:CreateInvalidation"
+            Resource:
+            - "*"
+
+  CodePipeLineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - "codepipeline.amazonaws.com"
+          Action:
+          - "sts:AssumeRole"
+      Policies:
+      - PolicyName: root
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+          - Effect: Allow
+            Action:
+            - "s3:GetObject"
+            - "s3:GetObjectVersion"
+            - "s3:GetBucketVersioning"
+            - "s3:GetObjectAcl"
+            - "s3:PutObject"
+            - "s3:PutObjectAcl"
+            - "s3:PutObjectVersionAcl"
+            Resource:
+            - !GetAtt PipelineBucket.Arn
+            - !Join ['', [!GetAtt PipelineBucket.Arn, "/*"]]
+          - Effect: Allow
+            Action:
+            - "codebuild:BatchGetBuilds"
+            - "codebuild:StartBuild"
+            Resource: "*"
+          - Effect: Allow
+            Action:
+            - "codestar-connections:UseConnection"
+            Resource: "*"
+          - Effect: Allow
+            Action:
+            - "appconfig:StartDeployment"
+            - "appconfig:GetDeployment"
+            - "appconfig:StopDeployment"
+            Resource: "*"
+
+  CodeBuild:
+    Type: 'AWS::CodeBuild::Project'
+    Properties:
+      Name: Application-CodeBuild
+      ServiceRole: !GetAtt CodeBuildRole.Arn
+      Artifacts:
+        Type: CODEPIPELINE
+        Name: MyProject
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Type: LINUX_CONTAINER
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:5.0
+        EnvironmentVariables:
+        - Name: BACKEND_HOST
+          Value: !Ref BackEndHost
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: !Sub |
+          version: 0.2
+          phases:
+            pre_build:
+              commands:
+                - echo Installing source NPM dependencies...
+                - sudo yum update -y
+                - sudo yum install -y nodejs npm
+                - cd frontend
+                - npm install -g @angular/cli
+                - npm install
+            build:
+              commands:
+                - echo Build started on `date`
+                - sed -i "s|<BACKEND_URL>|http://$BACKEND_HOST|g" src/environments/environment.prod.ts
+                - ng build --configuration=production
+            post_build:
+              commands:
+                - echo Build completed on `date`
+          artifacts:
+            files:
+              - '**/*'
+            base-directory: 'frontend/dist/browser'
+
+  PipelineBucket:
+    Type: 'AWS::S3::Bucket'
+
+  DeployBucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      WebsiteConfiguration:
+        IndexDocument: index.html
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+      OwnershipControls:
+        Rules:
+        - ObjectOwnership: ObjectWriter
+      CorsConfiguration:
+        CorsRules:
+        - AllowedOrigins: ['*']
+          AllowedMethods: [GET]
+
+  DeploymentBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref DeployBucket
+      PolicyDocument:
+        Statement:
+        - Action:
+          - "s3:GetObject"
+          - "s3:PutObject"
+          Effect: "Allow"
+          Resource:
+            Fn::Join:
+            - ""
+            - - "arn:aws:s3:::"
+              - Ref: DeployBucket
+              - "/*"
+          Principal: "*"
+
+Outputs:
+  WebsiteURL:
+    Description: "URL of the static website hosted on S3"
+    Value: !GetAtt DeployBucket.WebsiteURL
+    Export:
+      Name: !Sub "${AWS::StackName}-WebsiteURL"
