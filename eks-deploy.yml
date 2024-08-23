@@ -1,0 +1,368 @@
+# User Service Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service-deployment
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: user-service-app
+  template:
+    metadata:
+      labels:
+        app: user-service-app
+    spec:
+      containers:
+      - name: user-service-app-container
+        image: <USER_SERVICE_IMAGE>
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 9001
+          protocol: TCP
+        env:
+        - name: PORT
+          value: "9001"
+        - name: ISSUER_URI
+          valueFrom:
+            configMapKeyRef:
+              name: env-config
+              key: JWT_ISSUER_URI
+        - name: USER_POOL_ID
+          valueFrom:
+            configMapKeyRef:
+              name: env-config
+              key: COGNITO_USER_POOL_ID
+        - name: USER_POOL_CLIENT_ID
+          valueFrom:
+            configMapKeyRef:
+              name: env-config
+              key: COGNITO_USER_POOL_CLIENT_ID
+        - name: USER_POOL_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: aws-secret
+              key: COGNITO_USER_POOL_CLIENT_SECRET
+        - name: S3_BUCKET_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: env-config
+              key: AWS_S3_BUCKET_NAME
+        - name: AWS_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: aws-secret
+              key: AWS_ACCESS_KEY
+        - name: AWS_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: aws-secret
+              key: AWS_SECRET_KEY
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-service
+  namespace: default
+spec:
+  selector:
+    app: user-service-app
+  ports:
+  - protocol: TCP
+    port: 9001
+    targetPort: 9001
+  type: ClusterIP
+
+# Product Service Deployment
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: product-service-deployment
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: product-service-app
+  template:
+    metadata:
+      labels:
+        app: product-service-app
+    spec:
+      containers:
+      - name: product-service-app-container
+        image: <PRODUCT_SERVICE_IMAGE>
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 9002
+          protocol: TCP
+        env:
+        - name: PORT
+          value: "9002"
+        - name: ISSUER_URI
+          valueFrom:
+            configMapKeyRef:
+              name: env-config
+              key: JWT_ISSUER_URI
+        - name: S3_BUCKET_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: env-config
+              key: AWS_S3_BUCKET_NAME
+        - name: AWS_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: aws-secret
+              key: AWS_ACCESS_KEY
+        - name: AWS_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: aws-secret
+              key: AWS_SECRET_KEY
+        - name: USER_SERVICE_HOST
+          value: "user-service"
+        - name: USER_SERVICE_PORT
+          value: "9001"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: product-service
+  namespace: default
+spec:
+  selector:
+    app: product-service-app
+  ports:
+  - protocol: TCP
+    port: 9002
+    targetPort: 9002
+  type: ClusterIP
+
+# Order Service Deployment
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-service-deployment
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: order-service-app
+  template:
+    metadata:
+      labels:
+        app: order-service-app
+    spec:
+      containers:
+      - name: order-service-app-container
+        image: <ORDER_SERVICE_IMAGE>
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 9003
+          protocol: TCP
+        env:
+        - name: PORT
+          value: "9003"
+        - name: ISSUER_URI
+          valueFrom:
+            configMapKeyRef:
+              name: env-config
+              key: JWT_ISSUER_URI
+        - name: AWS_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: aws-secret
+              key: AWS_ACCESS_KEY
+        - name: AWS_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: aws-secret
+              key: AWS_SECRET_KEY
+        - name: USER_SERVICE_HOST
+          value: "user-service"
+        - name: USER_SERVICE_PORT
+          value: "9001"
+        - name: PRODUCT_SERVICE_HOST
+          value: "product-service"
+        - name: PRODUCT_SERVICE_PORT
+          value: "9002"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: order-service
+  namespace: default
+spec:
+  selector:
+    app: order-service-app
+  ports:
+  - protocol: TCP
+    port: 9003
+    targetPort: 9003
+  type: ClusterIP
+
+# Ingress Configuration
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: marketplace-ingress
+  namespace: default
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/healthcheck-path: /api/products
+    alb.ingress.kubernetes.io/success-codes: '200'
+    alb.ingress.kubernetes.io/healthcheck-interval-seconds: '60'
+    alb.ingress.kubernetes.io/healthcheck-timeout-seconds: '10'
+spec:
+  ingressClassName: alb
+  rules:
+  - http:
+      paths:
+      - path: /api/order/
+        pathType: Prefix
+        backend:
+          service:
+            name: order-service
+            port:
+              number: 9003
+      - path: /api/orders/
+        pathType: Prefix
+        backend:
+          service:
+            name: order-service
+            port:
+              number: 9003
+      - path: /api/review/
+        pathType: Prefix
+        backend:
+          service:
+            name: order-service
+            port:
+              number: 9003
+      - path: /api/reviews/
+        pathType: Prefix
+        backend:
+          service:
+            name: order-service
+            port:
+              number: 9003
+      - path: /api/user/
+        pathType: Prefix
+        backend:
+          service:
+            name: user-service
+            port:
+              number: 9001
+      - path: /api/customer/
+        pathType: Prefix
+        backend:
+          service:
+            name: user-service
+            port:
+              number: 9001
+      - path: /api/courier/
+        pathType: Prefix
+        backend:
+          service:
+            name: user-service
+            port:
+              number: 9001
+      - path: /api/seller/
+        pathType: Prefix
+        backend:
+          service:
+            name: user-service
+            port:
+              number: 9001
+      - path: /api/auth/
+        pathType: Prefix
+        backend:
+          service:
+            name: user-service
+            port:
+              number: 9001
+      - path: /api/couriers/
+        pathType: Prefix
+        backend:
+          service:
+            name: user-service
+            port:
+              number: 9001
+      - path: /api/sellers/
+        pathType: Prefix
+        backend:
+          service:
+            name: user-service
+            port:
+              number: 9001
+      - path: /api/logo-upload-url
+        pathType: Prefix
+        backend:
+          service:
+            name: user-service
+            port:
+              number: 9001
+      - path: /api/product/
+        pathType: Prefix
+        backend:
+          service:
+            name: product-service
+            port:
+              number: 9002
+      - path: /api/products/
+        pathType: Prefix
+        backend:
+          service:
+            name: product-service
+            port:
+              number: 9002
+      - path: /api/contract/
+        pathType: Prefix
+        backend:
+          service:
+            name: product-service
+            port:
+              number: 9002
+      - path: /api/contracts/
+        pathType: Prefix
+        backend:
+          service:
+            name: product-service
+            port:
+              number: 9002
+
+# ConfigMap
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: env-config
+  namespace: default
+data:
+  JWT_ISSUER_URI: <JWT_ISSUER_URI>
+  COGNITO_USER_POOL_ID: <COGNITO_USER_POOL_ID>
+  COGNITO_USER_POOL_CLIENT_ID: <COGNITO_USER_POOL_CLIENT_ID>
+  AWS_S3_BUCKET_NAME: <AWS_S3_BUCKET_NAME>
+
+# Secret for AWS Credentials
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: aws-secret
+  namespace: default
+type: Opaque
+stringData:
+  AWS_ACCESS_KEY: <AWS_ACCESS_KEY>
+  AWS_SECRET_KEY: <AWS_SECRET_KEY>
+  COGNITO_USER_POOL_CLIENT_SECRET: <COGNITO_USER_POOL_CLIENT_SECRET>
+

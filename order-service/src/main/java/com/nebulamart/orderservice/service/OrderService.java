@@ -9,6 +9,7 @@ import com.nebulamart.orderservice.util.AuthFacade;
 import com.nebulamart.orderservice.util.PaymentValidater;
 import com.nebulamart.orderservice.util.WrappedUser;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -27,6 +28,12 @@ public class OrderService {
     private final RestTemplate restTemplate;
     private final PaymentValidater paymentValidater;
 
+    @Value("${microservices.user-service-endpoint}")
+    private String userService;
+
+    @Value("${microservices.product-service-endpoint}")
+    private String productService;
+
     @Autowired
     public OrderService(OrderRepository orderRepository, ProductRepository productRepository, CustomerRepository customerRepository, AuthFacade authFacade, RestTemplate restTemplate, PaymentValidater paymentValidater) {
         this.orderRepository = orderRepository;
@@ -44,7 +51,7 @@ public class OrderService {
         List<PopulatedProductDTO> populatedProductDTOS = new ArrayList<>();
         float finalPrice = 0;
         for (SingleOrderCreateDTO singleOrderCreateDTO : ordersCreateDTO.getOrders()) {
-            PopulatedProductDTO populatedProductDTO = restTemplate.getForObject("http://PRODUCT-SERVICE/api/products/" + singleOrderCreateDTO.getProductId(), PopulatedProductDTO.class);
+            PopulatedProductDTO populatedProductDTO = restTemplate.getForObject(productService + "/api/products/" + singleOrderCreateDTO.getProductId(), PopulatedProductDTO.class);
             if (populatedProductDTO != null) {
                 populatedProductDTOS.add(populatedProductDTO);
                 finalPrice += (populatedProductDTO.getBasePrice() - populatedProductDTO.getBasePrice()* populatedProductDTO.getDiscount()/100) * singleOrderCreateDTO.getQuantity() + populatedProductDTO.getDeliveryCharge();
@@ -84,15 +91,15 @@ public class OrderService {
     }
 
     private PopulatedOrderDTO populateOrder(Order order) {
-        Product product = restTemplate.getForObject("http://PRODUCT-SERVICE/api/products/" + order.getProductId() + "/unmodified", Product.class);
+        Product product = restTemplate.getForObject(productService + "/api/products/" + order.getProductId() + "/unmodified", Product.class);
         if (product == null) {
             return null;
         }
-        Seller seller = restTemplate.getForObject("http://USER-SERVICE/api/sellers/" + order.getSellerId(), Seller.class);
+        Seller seller = restTemplate.getForObject(userService + "/api/sellers/" + order.getSellerId(), Seller.class);
         if (seller == null) {
             return null;
         }
-        Courier courier = restTemplate.getForObject("http://USER-SERVICE/api/couriers/" + order.getCourierId(), Courier.class);
+        Courier courier = restTemplate.getForObject(userService + "/api/couriers/" + order.getCourierId(), Courier.class);
         if (courier == null) {
             return null;
         }
@@ -148,7 +155,7 @@ public class OrderService {
         try {
             WrappedUser wrappedUser = authFacade.getWrappedUser(accessToken);
             String sellerId = wrappedUser.getCognitoUsername();
-            Product product = restTemplate.getForObject("http://PRODUCT-SERVICE/api/products/" + productId + "/unmodified", Product.class);
+            Product product = restTemplate.getForObject(productService + "/api/products/" + productId + "/unmodified", Product.class);
             if (product == null) {
                 return ResponseEntity.status(404).body(null);
             }
