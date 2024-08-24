@@ -13,18 +13,18 @@ Marketplace Platform is a web application that allows users to either buy or sel
 - [System Attributes](#system-attributes)
 
 <h2 align="center" id="system-design">🔧 System Design 🔧</h2>
-The system architecture is composed of five core components: the front-end, back-end, database, authentication service, and storage service, all working in collaboration to meet the system's functional requirements.
+The system architecture is composed of five core components: the front-end, back-end, database, Identity Service, and storage service, all working in collaboration to meet the system's functional requirements.
 The implementation of these components, uses the following frameworks and services:
 
 - Back-End Services (Spring Boot)
 - Front-End Web (Angular)
 - Database (Amazon DynamoDB)
-- Authentication Service (Amazon Cognito)
+- Identity Service (Amazon Cognito)
 - Storage Service (Amazon S3)
 
 ### Back-End Services
-The back-end is built using the Spring Boot framework, adhering to a microservices architecture. The back-end logic is divided into three distinct microservices—`User`, `Product`, and `Order`—each responsible for isolating specific functionalities. These services interact with one another as needed. <br/>
-Microservices are deployed on `AWS Elastic Kubernetes Service` (EKS), offering robust scalability and high reliability. Each microservice is exposed internally within the EKS cluster via ClusterIP services. An Ingress service, managed by an Ingress controller integrated with the cluster, is used to route external traffic to the appropriate microservice based on URL path mapping. <br/>
+- The back-end is built using the Spring Boot framework, adhering to a microservices architecture. The back-end logic is divided into three distinct microservices—`User`, `Product`, and `Order`—each responsible for isolating specific functionalities. These services interact with one another as needed.
+- Microservices are deployed on `AWS Elastic Kubernetes Service` (EKS), offering robust scalability and high reliability. Each microservice is exposed internally within the EKS cluster via ClusterIP services. An Ingress service, managed by an Ingress controller integrated with the cluster, is used to route external traffic to the appropriate microservice based on URL path mapping.
 
 <p align="center">
 <img src="resources/backend_microservices.png" width="70%"/>
@@ -43,30 +43,44 @@ Microservices are deployed on `AWS Elastic Kubernetes Service` (EKS), offering r
 - The `Facade` pattern is employed to abstract the logic of user information retrieval by encapsulating the functionalities of Amazon DynamoDB within a single class. This approach minimizes the need for direct network resource access, thereby improving performance and maintainability.
 
 ### Front-End Web
-The front-end is developed using the Angular framework, providing a responsive and interactive user interface. The Angular application is hosted on an `Amazon S3` bucket, with static website hosting enabled. The front-end communicates with the back-end services via RESTful APIs exposed by the microservices. <br/>
+- The front-end is developed using the Angular framework, providing a responsive and interactive user interface. The Angular application is hosted on an `Amazon S3` bucket, with static website hosting enabled. The front-end communicates with the back-end services via RESTful APIs exposed by backend microservices.
 
 ### Database
-The database is implemented using `Amazon DynamoDB`, a fully managed NoSQL (key-value store) database service provided by AWS. DynamoDB offers seamless scalability, high availability, and low latency, making it an ideal choice for the Marketplace Platform. The database is designed to store user information, product details, and order data.
+- The system uses `Amazon DynamoDB`, a fully managed NoSQL key-value store from AWS, offering seamless scalability, high availability, and low latency. It efficiently stores user data, product details, and orders, with Global Secondary Indexes (GSIs) enabling optimized queries across various attributes. The database is integrated with back-end microservices for data storage and retrieval.
 
-### Authentication Service
-The authentication service is implemented using `Amazon Cognito`, a fully managed identity and access management service provided by AWS. Amazon Cognito offers user authentication, authorization, and user management functionalities, enabling secure access to the Marketplace Platform. The service is integrated with the user microservice to authenticate and authorize user requests.
-System makes use of Custom Attributes, provided by Amazon Cognito, to implement Role-Based Access Control (RBAC) for users.
+### Identity Service
+- Amazon Cognito, AWS's fully managed identity and access management service, is used to handle user authentication, authorization and management in the system. Integrated with the user microservice, it secures access to the Marketplace Platform. Custom Attributes in Cognito are used to implement Role-Based Access Control (RBAC) for users. 
 
 ### Storage Service
-The storage service is implemented using `Amazon S3`, a scalable object storage service provided by AWS. Amazon S3 is used to store product images uploaded by sellers on the Marketplace Platform. The service offers high durability, availability, and scalability, making it an ideal choice for storing static assets. Backend uses the AWS SDK to generate pre-signed URLs for uploading images to Amazon S3 bucket. Frontend uses these pre-signed URLs to directly upload (PUT) images to the S3 bucket. Uploaded images are publicly accessible (GET) via the object URL.
+- `Amazon S3`, AWS's scalable object storage, is used to store product images uploaded by sellers. With high durability, availability, and scalability, S3 is an ideal option for static asset storage. The backend leverages the AWS SDK to generate pre-signed URLs for image uploads, allowing the frontend to directly upload images via PUT requests. Uploaded images are publicly accessible through their object URLs.
 
 <h2 align="center" id="development-methodology">🔨 Development Methodology 🔨</h2>
+System development follows the Agile methodology, with an emphasis on iterative development, continuous integration and continuous deployment (CI/CD). Two Separate CI/CD pipelines are implemented for the front-end and back-end.
+
+### Back-End CI/CD Pipeline
+- The back-end CI/CD pipeline is implemented using `Jenkins`, an open-source automation server. The pipeline consists of multiple stages, including `Source`, `Package`, `Build`, `Test`, and `Deploy`.
+    - **Source**: The pipeline is triggered by polling the specified branch in the GitHub repository for changes, cloning the repository, and checking out the specified branch in the Jenkins workspace.
+    - **Package**: Maven downloads dependencies and packages the application into JAR files
+    - **Test**: Automated tests are executed against the packaged application to ensure its correctness and stability. (This stage has not been implemented yet)
+    - **Build**: Docker images of the application are built, tagged with the latest commit hash, and pushed to Amazon Elastic Container Registry (ECR).
+    - **Deploy**: Docker images are deployed to the EKS cluster, updating running pods with the latest application version. Using kubernetes manifests, allows updates to both the application and the deployment configuration.
+- Jenkins worker is deployed on an EC2 instance, with necessary plugins installed to support the pipeline stages. The pipeline is configured to run automatically upon changes to the specified branch in the GitHub repository.
 
 <h2 align="center" id="system-attributes">📈 System Attributes 📈</h2>
 
 ### Reliability
 
+#### Availability
+- The system ensures high availability by running multiple instances of each microservice within an EKS cluster. Kubernetes handles pod failures with automatic restarts, while the cluster’s Multi-AZ deployment guarantees availability even if an entire AZ fails.
+- Amazon DynamoDB is built for high availability and durability, with data automatically replicated across multiple Availability Zones (AZs) within a region. DynamoDB Global Tables further boost availability by replicating data across multiple regions.
+- Amazon S3 provides high availability by storing data across multiple devices in multiple facilities within a region, ensuring that images are always accessible.
 
 ### Security
 
 #### Application Security
-Environment variables containing sensitive information, such as database credentials and API keys, are stored securely in Kubernetes Secrets. <br/>
-Integration with Amazon Cognito, ensures only users with verified Email accounts can access protected resources within the system. <br/>
+- Environment variables containing sensitive information, such as database credentials and API keys, are stored securely in Kubernetes Secrets. <br/>
+- Integration with Amazon Cognito, ensures only users with verified Email accounts can access protected resources within the system. <br/>
 
 #### Network Security
-Pods running Application Services are deployed in a private subnet (with ClusterIP services) and are not directly accessible from the internet. The Ingress controller is deployed in a public subnet, providing a single entry point to the cluster from the public internet.<br/>
+- Pods running Application Services are deployed in a private subnet (with ClusterIP services) and are not directly accessible from the internet. The Ingress controller is deployed in a public subnet, providing a single entry point to the cluster from the public internet.<br/>
+- Security Group of the EC2 instance hosting Jenkins is configured to allow inbound traffic only via SSH port 22, ensuring secure access to the server.
