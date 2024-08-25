@@ -67,6 +67,8 @@ System development follows the Agile methodology, with an emphasis on iterative 
         - **Post-Build**: The built application is tested to ensure its correctness. (This stage has not been implemented yet).
     - **Deploy**: The built application is deployed to an S3 bucket with static website hosting enabled. The pipeline is configured to automatically deploy the application upon successful build completion. AWS CodeDeploy is responsible for this stage of the pipeline.
 
+Refer to the `front-dev-cicd` branch for the implementation of the front-end CI/CD pipeline.
+
 ### Back-End CI/CD Pipeline
 - The back-end CI/CD pipeline is implemented using `Jenkins`, an open-source automation server. The pipeline consists of multiple stages, including `Source`, `Package`, `Build`, `Test`, and `Deploy`.
     - **Source**: The pipeline is triggered by polling the specified branch in the GitHub repository for changes, cloning the repository, and checking out the specified branch in the Jenkins workspace.
@@ -76,11 +78,15 @@ System development follows the Agile methodology, with an emphasis on iterative 
     - **Deploy**: Docker images are deployed to the EKS cluster, updating running pods with the latest application version. Using kubernetes manifests, allows updates to both the application and the deployment configuration.
 - Jenkins worker is deployed on an EC2 instance, with necessary plugins installed to support the pipeline stages. The pipeline is configured to run automatically upon changes to the specified branch in the GitHub repository.
 
+Refer to the `eks-jenkins-pipeline` branch for the implementation of the back-end CI/CD pipeline.
+
 ### Back-End Development on Local Machine
 - The system supports running back-end services locally through three methods:
-    - **Non-Dockerized**: Developers can run the services natively on their local machines using the Spring Boot Maven plugin. In this setup, service discovery is managed by the Eureka Server, and Spring Cloud Gateway is used for API routing and traffic management.
+    - **Non-Dockerized**: Developers can run the services natively on their local machines using the Spring Boot Maven plugin. In this setup, service discovery is managed by the Eureka Server, and Spring Cloud Gateway is used for API routing and traffic management. Refer to the branch `local` for this setup.
     - **Docker Compose**: Developers can containerize and orchestrate services using Docker Compose. This approach encapsulates services within Docker containers, which communicate within a Docker Compose-defined network. Service discovery is facilitated through Docker Compose service names, and NGINX acts as a reverse proxy, directing client requests to the appropriate services based on predefined rules.
+    Refer to the branch `docker-compose` for this setup.
     - **MiniKube Kubernetes**: Developers can deploy services within a MiniKube-managed Kubernetes cluster. Here, services run as Kubernetes pods, and service discovery is handled via Kubernetes service names. An Ingress resource is configured to manage external access, routing incoming traffic to the appropriate services. The Ingress endpoint is made accessible to the host machine using a MiniKube tunnel.
+    Refer to the branch `minikube-kubernetes` for this setup.
 
 <h2 align="center" id="system-attributes">📈 System Attributes 📈</h2>
 
