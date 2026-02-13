@@ -1,4 +1,4 @@
-<h1 align="center">NebulaMart - Digital Marketplace Platform</h1>
+<h1 align="center">Digital Marketplace Platform</h1>
 
 <p align="center">
   <strong>A scalable, cloud-native e-commerce platform built with microservices architecture</strong>
@@ -26,7 +26,7 @@
 
 ## Overview
 
-NebulaMart is a full-featured digital marketplace platform that enables users to buy and sell products seamlessly. Built with modern microservices architecture, the platform leverages Spring Boot for backend services, Angular for the frontend, and integrates with multiple AWS services to ensure scalability, reliability, and security.
+A full-featured digital marketplace platform that enables users to buy and sell products seamlessly. Built with modern microservices architecture, the platform leverages Spring Boot for backend services, Angular for the frontend, and integrates with multiple AWS services to ensure scalability, reliability, and security.
 
 ### Key Features
 
@@ -832,5 +832,5 @@ Built with Spring Boot, Angular, and AWS. Special thanks to the Spring, Angular,
 </p>
 
 <p align="center">
-  <sub>NebulaMart - Empowering Digital Commerce</sub>
+  <sub>Digital Marketplace Platform</sub>
 </p>
