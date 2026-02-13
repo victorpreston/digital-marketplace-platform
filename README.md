@@ -1,120 +1,836 @@
-<h1 align="center">🛒 Marketplace Platform 🛍️</h1>
+<h1 align="center">NebulaMart - Digital Marketplace Platform</h1>
 
-<h2 align="center">🏢 System Architecture (Current) 🛠️</h2>
+<p align="center">
+  <strong>A scalable, cloud-native e-commerce platform built with microservices architecture</strong>
+</p>
 
-![sysArchi](resources/system_architecture_v1.png)
+<p align="center">
+  <img src="https://img.shields.io/badge/Spring%20Boot-3.2.3-brightgreen" alt="Spring Boot">
+  <img src="https://img.shields.io/badge/Angular-18.0-red" alt="Angular">
+  <img src="https://img.shields.io/badge/AWS-Cloud-orange" alt="AWS">
+  <img src="https://img.shields.io/badge/Kubernetes-EKS-blue" alt="Kubernetes">
+  <img src="https://img.shields.io/badge/Java-17-blue" alt="Java">
+</p>
 
-Marketplace Platform is a web application that allows users to either buy or sell products. The platform is developed using the Spring Boot and Angular frameworks, integrated with multiple AWS services, ensuring scalability, reliability, and security of the system.
+---
 
-<h2 align="center">📚 Table of Contents 📚</h2>
+## Quick Links
 
+- [Getting Started](#getting-started) - Setup and installation guide
+- [API Reference](#api-reference) - Complete API documentation
+- [System Design](#system-design) - Architecture and design patterns
+- [Development Methodology](#development-methodology) - CI/CD pipelines
+- [Contributing](#contributing) - How to contribute
+
+---
+
+## Overview
+
+NebulaMart is a full-featured digital marketplace platform that enables users to buy and sell products seamlessly. Built with modern microservices architecture, the platform leverages Spring Boot for backend services, Angular for the frontend, and integrates with multiple AWS services to ensure scalability, reliability, and security.
+
+### Key Features
+
+- **Multi-Role Authentication** - Customer, Seller, and Courier roles with Amazon Cognito
+- **Product Management** - Complete CRUD operations for products with image storage
+- **Order Processing** - End-to-end order management system
+- **Delivery Contracts** - Dynamic courier assignment and contract management
+- **Review System** - Product and courier ratings and reviews
+- **Advanced Search** - Filter products by category, price range, and text search
+- **Responsive UI** - Built with Angular Material for seamless user experience
+- **Secure** - JWT-based authentication with role-based access control
+- **Scalable** - Microservices deployed on AWS EKS with auto-scaling capabilities
+
+<h2 align="center">System Architecture</h2>
+
+![System Architecture](resources/system_architecture_v1.png)
+
+<h2 align="center">Table of Contents</h2>
+
+- [Tech Stack](#tech-stack)
 - [System Design](#system-design)
+- [Getting Started](#getting-started)
+- [API Reference](#api-reference)
 - [Development Methodology](#development-methodology)
 - [System Attributes](#system-attributes)
-- [System Review and Future Improvements](#system-review-and-future-improvements)
+- [Future Improvements](#future-improvements)
+- [Contributing](#contributing)
 
-<h2 align="center" id="system-design">🔧 System Design 🔧</h2>
-The system architecture is composed of five core components: the front-end, back-end, database, Identity Service, and storage service, all working in collaboration to meet the system's functional requirements.
-The implementation of these components, uses the following frameworks and services:
+---
 
-- Back-End Services (Spring Boot)
-- Front-End Web (Angular)
-- Database (Amazon DynamoDB)
-- Identity Service (Amazon Cognito)
-- Storage Service (Amazon S3)
+<h2 align="center" id="tech-stack">Tech Stack</h2>
 
-### Back-End Services
-- The back-end is built using the Spring Boot framework, adhering to a microservices architecture. The back-end logic is divided into three distinct microservices—`User`, `Product`, and `Order`—each responsible for isolating specific functionalities. These services interact with one another as needed.
-- Microservices are deployed on `AWS Elastic Kubernetes Service` (EKS), offering robust scalability and high reliability. Each microservice is exposed internally within the EKS cluster via ClusterIP services. An Ingress service, managed by an Ingress controller integrated with the cluster, is used to route external traffic to the appropriate microservice based on URL path mapping.
+### Backend
+- Spring Boot 3.2.3 | Java 17 | Maven
+- Spring Security with OAuth2 Resource Server
+- AWS SDK v2 (DynamoDB, S3, Cognito, Secrets Manager)
+
+### Frontend
+- Angular 18.0 | Angular Material
+- NgRx State Management
+- Chart.js, ngx-toastr, angular-oauth2-oidc
+
+### Infrastructure
+- AWS EKS (Elastic Kubernetes Service)
+- Amazon DynamoDB | Amazon S3 | Amazon Cognito
+- CI/CD: AWS CodePipeline (Frontend), Jenkins (Backend)
+- Docker, Docker Compose, NGINX
+
+---
+
+<h2 align="center" id="getting-started">Getting Started</h2>
+
+### Quick Start
+
+**Prerequisites**: Java 17+, Node.js 18+, Maven, Docker, AWS CLI
+
+```bash
+# Clone repository
+git clone <repository-url>
+cd digital-marketplace-platform
+
+# Configure .env file with AWS credentials
+
+# Run with Docker Compose (Recommended)
+docker-compose up --build
+
+# Services available at:
+# - NGINX Gateway: http://localhost:80
+# - Frontend: http://localhost:4200
+```
+
+**AWS Setup Required**: DynamoDB tables (users, products, orders, contracts, reviews), S3 bucket, Cognito User Pool
+
+---
+
+<h2 align="center" id="system-design">System Design</h2>
+
+The platform consists of five core components: Spring Boot microservices (User, Product, Order), Angular frontend, DynamoDB database, Cognito authentication, and S3 storage.
+
+### Microservices Architecture
+- Three Spring Boot microservices deployed on AWS EKS with ClusterIP services for internal communication
+- Ingress controller routes external traffic to microservices based on URL path mapping
 
 <p align="center">
 <img src="resources/backend_microservices.png" width="70%"/>
 </p>
 
-#### Communication of Microservices
-- Inter-pod communication occurs over the Kubernetes network, ensuring secure and reliable data exchange. The pods are designed to be stateless, with persistent data stored in the database, enabling horizontal scaling without risk of data loss. Pods communicate with each other through services using DNS names provided by the Kubernetes DNS service. 
-- Communication with external services like Amazon DynamoDB and Amazon S3 is facilitated via a NAT Gateway, allowing pods within private subnets to access the internet. Applications running in the pods utilize the AWS SDK for Java, which offers a high-level API that abstracts the underlying HTTP API interactions with AWS services. The SDK includes built-in retry logic and error handling, enhancing the system's resilience to transient failures.
+#### Communication & Design Patterns
+- **Inter-Service Communication**: Stateless pods communicate over Kubernetes network using DNS service names. External AWS services (DynamoDB, S3) accessed via NAT Gateway with AWS SDK for Java.
+- **Design Patterns**: Repository (data access abstraction), Builder (AWS SDK clients), Chain of Responsibility (security filters), DTOs (data transfer), Adapter (JWT authentication), Facade (DynamoDB operations).
 
-#### Design Patterns
-- The back-end services are designed using the `Repository` pattern, which abstracts the data access logic from the business logic. This pattern allows for easy unit testing and code maintainability.
-- `Builder` pattern is used with AWS SDK clients to create service clients with default configurations. This pattern simplifies the client creation process, making it easier to manage configurations across the application and improving code readability.
-- Security Filter Chain uses `Chain of Responsibility` pattern to process incoming requests and apply security checks in a sequential manner. This pattern allows for easy addition or removal of security filters without modifying the existing codebase.
-- Trasfering data between components is done using `Data Transfer Objects (DTOs)`, which are lightweight objects that contain only the necessary data to transfer between components. This pattern helps in reducing the amount of data transferred, improving performance.
-- Spring Security transforms the JWT token into an Authentication object using the `Adapter` pattern. This Authentication object is subsequently employed throughout the microservices to authorize requests and verify user identity.
-- The `Facade` pattern is employed to abstract the logic of user information retrieval by encapsulating the functionalities of Amazon DynamoDB within a single class. This approach minimizes the need for direct network resource access, thereby improving performance and maintainability.
+### Frontend, Database & AWS Services
+- **Frontend**: Angular application hosted on S3 with static website hosting, communicates with backend via RESTful APIs
+- **Database**: Amazon DynamoDB with Global Secondary Indexes (GSIs) for optimized queries on users, products, orders, contracts, and reviews
+- **Authentication**: Amazon Cognito for user authentication and Role-Based Access Control (RBAC)
+- **Storage**: Amazon S3 for product images with pre-signed URLs for direct uploads
 
-### Front-End Web
-- The front-end is developed using the Angular framework, providing a responsive and interactive user interface. The Angular application is hosted on an `Amazon S3` bucket, with static website hosting enabled. The front-end communicates with the back-end services via RESTful APIs exposed by backend microservices.
+<h2 align="center" id="development-methodology">Development Methodology</h2>
 
-### Database
-- The system uses `Amazon DynamoDB`, a fully managed NoSQL key-value store from AWS, offering seamless scalability, high availability, and low latency. It efficiently stores user data, product details, and orders, with Global Secondary Indexes (GSIs) enabling optimized queries across various attributes. The database is integrated with back-end microservices for data storage and retrieval.
+### CI/CD Pipelines
 
-### Identity Service
-- Amazon Cognito, AWS's fully managed identity and access management service, is used to handle user authentication, authorization and management in the system. Integrated with the user microservice, it secures access to the Marketplace Platform. Custom Attributes in Cognito are used to implement Role-Based Access Control (RBAC) for users. 
+**Frontend** (AWS CodePipeline): Source → Build (npm, Angular CLI) → Deploy (S3) - See `front-dev-cicd` branch
 
-### Storage Service
-- `Amazon S3`, AWS's scalable object storage, is used to store product images uploaded by sellers. With high durability, availability, and scalability, S3 is an ideal option for static asset storage. The backend leverages the AWS SDK to generate pre-signed URLs for image uploads, allowing the frontend to directly upload images via PUT requests. Uploaded images are publicly accessible through their object URLs.
+**Backend** (Jenkins): Source → Package (Maven) → Build (Docker → ECR) → Deploy (EKS) - See `eks-jenkins-pipeline` branch
 
-<h2 align="center" id="development-methodology">🔨 Development Methodology 🔨</h2>
-System development follows the Agile methodology, with an emphasis on iterative development, continuous integration and continuous deployment (CI/CD). Two Separate CI/CD pipelines are implemented for the front-end and back-end.
+### Local Development Options
+- **Native**: Spring Boot with Eureka Server (`local` branch)
+- **Docker Compose**: NGINX reverse proxy (`docker-compose` branch)
+- **Minikube**: Local Kubernetes cluster (`minikube-kubernetes` branch)
 
-### Front-End CI/CD Pipeline
-- The front-end CI/CD pipeline is implemented using AWS CodePipeline, a fully managed continuous delivery service. The pipeline consists of multiple stages, including `Source`, `Build`, and `Deploy`.
-    - **Source**: The pipeline is triggered by changes to the specified branch in the GitHub repository. The source code of the specified branch is fetched and put into the S3 bucket of the pipeline (artifact bucket). AWS CodeConnect is used to connect the pipeline to the GitHub repository with necessary authentication keys.
-    - **Build**: This stage consists of 3 sub-stages: `Pre-Build`, `Build`, and `Post-Build`. AWS CodeBuild is used to execute these sub-stages.
-        - **Pre-Build**: The pipeline installs the necessary dependencies using npm and Angular CLI.
-        - **Build**: The Angular application is built to generate the production-ready code. Build artifacts will be stored in the S3 bucket of the pipeline, at the end of this stage.
-        - **Post-Build**: The built application is tested to ensure its correctness. (This stage has not been implemented yet).
-    - **Deploy**: The built application is deployed to an S3 bucket with static website hosting enabled. The pipeline is configured to automatically deploy the application upon successful build completion. AWS CodeDeploy is responsible for this stage of the pipeline.
-
-Refer to the `front-dev-cicd` branch for the implementation of the front-end CI/CD pipeline.
-
-### Back-End CI/CD Pipeline
-- The back-end CI/CD pipeline is implemented using `Jenkins`, an open-source automation server. The pipeline consists of multiple stages, including `Source`, `Package`, `Build`, `Test`, and `Deploy`.
-    - **Source**: The pipeline is triggered by polling the specified branch in the GitHub repository for changes, cloning the repository, and checking out the specified branch in the Jenkins workspace.
-    - **Package**: Maven downloads dependencies and packages the application into JAR files
-    - **Test**: Automated tests are executed against the packaged application to ensure its correctness and stability. (This stage has not been implemented yet)
-    - **Build**: Docker images of the application are built, tagged with the latest commit hash, and pushed to Amazon Elastic Container Registry (ECR).
-    - **Deploy**: Docker images are deployed to the EKS cluster, updating running pods with the latest application version. Using kubernetes manifests, allows updates to both the application and the deployment configuration.
-- Jenkins worker is deployed on an EC2 instance, with necessary plugins installed to support the pipeline stages. The pipeline is configured to run automatically upon changes to the specified branch in the GitHub repository.
-
-Refer to the `eks-jenkins-pipeline` branch for the implementation of the back-end CI/CD pipeline.
-
-### Back-End Development on Local Machine
-- The system supports running back-end services locally through three methods:
-    - **Non-Dockerized**: Developers can run the services natively on their local machines using the Spring Boot Maven plugin. In this setup, service discovery is managed by the Eureka Server, and Spring Cloud Gateway is used for API routing and traffic management. Refer to the branch `local` for this setup.
-    - **Docker Compose**: Developers can containerize and orchestrate services using Docker Compose. This approach encapsulates services within Docker containers, which communicate within a Docker Compose-defined network. Service discovery is facilitated through Docker Compose service names, and NGINX acts as a reverse proxy, directing client requests to the appropriate services based on predefined rules.
-    Refer to the branch `docker-compose` for this setup.
-    - **MiniKube Kubernetes**: Developers can deploy services within a MiniKube-managed Kubernetes cluster. Here, services run as Kubernetes pods, and service discovery is handled via Kubernetes service names. An Ingress resource is configured to manage external access, routing incoming traffic to the appropriate services. The Ingress endpoint is made accessible to the host machine using a MiniKube tunnel.
-    Refer to the branch `minikube-kubernetes` for this setup.
-
-<h2 align="center" id="system-attributes">📈 System Attributes 📈</h2>
+<h2 align="center" id="system-attributes">System Attributes</h2>
 
 ### Reliability
-
-#### Availability
-- The system ensures high availability by running multiple instances of each microservice within an EKS cluster. Kubernetes handles pod failures with automatic restarts, while the cluster’s Multi-AZ deployment guarantees availability even if an entire AZ fails.
-- Amazon DynamoDB is built for high availability and durability, with data automatically replicated across multiple Availability Zones (AZs) within a region. DynamoDB Global Tables further boost availability by replicating data across multiple regions.
-- Amazon S3 provides high availability by storing data across multiple devices in multiple facilities within a region, ensuring that images are always accessible.
+- Multi-instance microservices in EKS with Multi-AZ deployment and automatic pod restarts
+- DynamoDB with multi-AZ replication and S3 multi-facility storage for high availability
 
 ### Security
+- **Application**: Kubernetes Secrets for credentials, Cognito for verified users, IAM policies, JWT validation
+- **Network**: Private subnets for pods, public Ingress controller, SSH-only access to Jenkins
+- **Data**: Encryption at rest (DynamoDB with KMS, S3 with SSE-S3)
 
-#### Application Security
-- Environment variables containing sensitive information, such as database credentials and API keys, are stored securely in Kubernetes Secrets. <br/>
-- Integration with Amazon Cognito, ensures only users with verified Email accounts can access protected resources within the system. <br/>
-- IAM roles and policies are used to restrict access to AWS resources, ensuring that only authorized entities can interact with the system. <br/>
+---
 
-#### Network Security
-- Pods running Application Services are deployed in a private subnet (with ClusterIP services) and are not directly accessible from the internet. The Ingress controller is deployed in a public subnet, providing a single entry point to the cluster from the public internet.<br/>
-- Security Group of the EC2 instance hosting Jenkins is configured to allow inbound traffic only via SSH port 22, ensuring secure access to the server.
+<h2 align="center" id="api-reference">API Reference</h2>
 
-#### Data Security
-- Data stored in Amazon DynamoDB is encrypted at rest using AWS Key Management Service (KMS) managed keys. Amazon S3 data is encrypted at rest using server-side encryption with Amazon S3-managed keys (SSE-S3). <br/>
+The platform exposes RESTful APIs for all operations. All authenticated endpoints require a valid JWT token in the Authorization header.
+
+### Authentication Endpoints
+
+#### Sign Up - Customer
+
+```http
+POST /api/auth/sign-up/customer
+```
+
+**Request Body:**
+```json
+{
+  "name": "user_name",
+  "email": "user_email",
+  "password": "password",
+  "contactNumber": "mobile_number",
+  "address": "user_address"
+}
+```
+
+#### Sign Up - Seller
+
+```http
+POST /api/auth/sign-up/seller
+```
+
+**Request Body:**
+```json
+{
+  "name": "seller_name",
+  "email": "seller_email",
+  "password": "password",
+  "contactNumber": "mobile_number",
+  "address": "seller_address"
+}
+```
+
+#### Sign Up - Courier
+
+```http
+POST /api/auth/sign-up/courier
+```
+
+**Request Body:**
+```json
+{
+  "name": "courier_name",
+  "email": "courier_email",
+  "password": "password",
+  "contactNumber": "mobile_number"
+}
+```
+
+#### Verify Account
+
+```http
+GET /api/auth/verify-account?email={email}&code={verification_code}
+```
+
+**Query Parameters:**
+- `email` - User's email address
+- `code` - Verification code sent to email
+
+#### Sign In
+
+```http
+POST /api/auth/sign-in
+```
+
+**Request Body:**
+```json
+{
+  "email": "user_email",
+  "password": "password"
+}
+```
+
+**Response:** Returns JWT tokens for authentication
+
+#### Sign Out
+
+```http
+GET /api/user/sign-out
+```
+
+**Authentication:** Any User ID Token Required
+
+#### Change Password
+
+```http
+POST /api/user/change-password
+```
+
+**Authentication:** Any User ID Token Required
+
+**Request Body:**
+```json
+{
+  "newPassword": "new_password",
+  "oldPassword": "old_password"
+}
+```
+
+---
+
+### User Management Endpoints
+
+#### Get Customer Account
+
+```http
+GET /api/customer/account
+```
+
+**Authentication:** Customer ID Token Required
+
+#### Get Seller Account
+
+```http
+GET /api/seller/account
+```
+
+**Authentication:** Seller ID Token Required
+
+#### Get Courier Account
+
+```http
+GET /api/courier/account
+```
+
+**Authentication:** Courier ID Token Required
+
+#### Update Customer Account
+
+```http
+PATCH /api/customer/account
+```
+
+**Authentication:** Customer ID Token Required
+
+**Request Body:**
+```json
+{
+  "name": "new_customer_name"
+}
+```
+
+#### Update Seller Account
+
+```http
+PATCH /api/seller/account
+```
+
+**Authentication:** Seller ID Token Required
+
+**Request Body:**
+```json
+{
+  "name": "new_seller_name"
+}
+```
+
+#### Update Courier Account
+
+```http
+PATCH /api/courier/account
+```
+
+**Authentication:** Courier ID Token Required
+
+**Request Body:**
+```json
+{
+  "contactNumber": "new_mobile_number"
+}
+```
+
+#### Get Seller Details
+
+```http
+GET /api/sellers/{seller_id}
+```
+
+**Path Parameters:**
+- `seller_id` - Unique identifier of the seller
+
+#### Get Courier Details
+
+```http
+GET /api/couriers/{courier_id}
+```
+
+**Path Parameters:**
+- `courier_id` - Unique identifier of the courier
+
+#### Get Couriers List
+
+```http
+GET /api/seller/couriers-list
+```
+
+**Authentication:** Seller ID Token Required
+
+---
+
+### Product Management Endpoints
+
+#### Get Product Image Upload URL
+
+```http
+GET /api/product/upload-url?extension={file_extension}
+```
+
+**Authentication:** Seller ID Token Required
+
+**Query Parameters:**
+- `extension` - File extension (e.g., jpg, png)
+
+**Response:** Pre-signed S3 URL for image upload
+
+#### Get Logo Upload URL
+
+```http
+GET /api/logo-upload-url?extension={file_extension}
+```
+
+**Query Parameters:**
+- `extension` - File extension (e.g., jpg, png)
+
+**Response:** Pre-signed S3 URL for logo upload
+
+#### Create Product
+
+```http
+POST /api/product/create
+```
+
+**Authentication:** Seller ID Token Required
+
+**Request Body:**
+```json
+{
+  "name": "product_name",
+  "description": "product_description",
+  "brand": "product_brand",
+  "imageUrls": [],
+  "category": "ELECTRONICS",
+  "stock": 10,
+  "basePrice": 200000,
+  "discount": 0
+}
+```
+
+#### Update Product
+
+```http
+PATCH /api/product/{product_id}
+```
+
+**Authentication:** Seller ID Token Required
+
+**Path Parameters:**
+- `product_id` - Unique identifier of the product
+
+**Request Body:**
+```json
+{
+  "description": "new_description"
+}
+```
+
+#### Delete Product
+
+```http
+DELETE /api/product/{product_id}
+```
+
+**Authentication:** Seller ID Token Required
+
+**Path Parameters:**
+- `product_id` - Unique identifier of the product
+
+#### Get Product (Seller View)
+
+```http
+GET /api/product/{product_id}
+```
+
+**Authentication:** Seller ID Token Required
+
+**Path Parameters:**
+- `product_id` - Unique identifier of the product
+
+#### Get All Products (Public)
+
+```http
+GET /api/products?page={page_number}
+```
+
+**Query Parameters:**
+- `page` - Page number for pagination
+
+#### Search Products
+
+```http
+GET /api/products/search?page={page_number}&category={category}&text={search_text}&minPrice={min_price}&maxPrice={max_price}
+```
+
+**Query Parameters:**
+- `page` - Page number for pagination
+- `category` - Product category filter
+- `text` - Search text for product name/description
+- `minPrice` - Minimum price filter
+- `maxPrice` - Maximum price filter
+
+#### Get Product Details (Public)
+
+```http
+GET /api/products/{product_id}
+```
+
+**Path Parameters:**
+- `product_id` - Unique identifier of the product
+
+#### Get Unmodified Product Details
+
+```http
+GET /api/products/{product_id}/unmodified
+```
+
+**Path Parameters:**
+- `product_id` - Unique identifier of the product
+
+---
+
+### Contract Management Endpoints
+
+Contracts manage the relationship between sellers and couriers for product delivery.
+
+#### Get All Contracts
+
+```http
+GET /api/contracts
+```
+
+**Authentication:** Seller or Courier ID Token Required
+
+#### Get Contract Details
+
+```http
+GET /api/contracts/{contract_id}
+```
+
+**Authentication:** Seller or Courier ID Token Required
+
+**Path Parameters:**
+- `contract_id` - Unique identifier of the contract
+
+#### Add Courier to Product (Seller)
+
+```http
+POST /api/contract/seller/add-courier
+```
+
+**Authentication:** Seller ID Token Required
+
+**Request Body:**
+```json
+{
+  "productId": "product_id",
+  "courierId": "courier_id"
+}
+```
+
+#### Remove Courier from Product (Seller)
+
+```http
+DELETE /api/contract/seller/remove-courier/{product_id}
+```
+
+**Authentication:** Seller ID Token Required
+
+**Path Parameters:**
+- `product_id` - Unique identifier of the product
+
+#### Change Courier for Product (Seller)
+
+```http
+POST /api/contract/seller/change-courier
+```
+
+**Authentication:** Seller ID Token Required
+
+**Request Body:**
+```json
+{
+  "productId": "product_id",
+  "courierId": "courier_id"
+}
+```
+
+#### Delete Contract (Seller)
+
+```http
+DELETE /api/contract/seller/delete-contract/{contract_id}
+```
+
+**Authentication:** Seller ID Token Required
+
+**Path Parameters:**
+- `contract_id` - Unique identifier of the contract
+
+#### Respond to Contract (Courier)
+
+```http
+POST /api/contract/courier/respond
+```
+
+**Authentication:** Courier ID Token Required
+
+**Request Body (Accept):**
+```json
+{
+  "contractId": "contract_id",
+  "accept": true,
+  "deliveryCharge": 200
+}
+```
+
+**Request Body (Reject):**
+```json
+{
+  "contractId": "contract_id",
+  "accept": false
+}
+```
+
+#### Cancel Contract (Courier)
+
+```http
+GET /api/contract/courier/cancel-contract/{contract_id}
+```
+
+**Authentication:** Courier ID Token Required
+
+**Path Parameters:**
+- `contract_id` - Unique identifier of the contract
+
+#### Update Contract (Courier)
+
+```http
+PATCH /api/contract/courier/update-contract/{contract_id}
+```
+
+**Authentication:** Courier ID Token Required
+
+**Path Parameters:**
+- `contract_id` - Unique identifier of the contract
+
+**Request Body:**
+```json
+{
+  "deliveryCharge": 200
+}
+```
+
+---
+
+### Order Management Endpoints
+
+#### Create Order (Customer)
+
+```http
+GET /api/order/customer/create
+```
+
+**Authentication:** Customer ID Token Required
+
+**Request Body:**
+```json
+{
+  "orders": [
+    {
+      "productId": "product_id",
+      "quantity": 2
+    }
+  ],
+  "deliveryAddress": "delivery_address",
+  "paymentId": "234436t7688",
+  "amountPaid": 2400
+}
+```
+
+#### Cancel Order (Customer)
+
+```http
+GET /api/order/customer/cancel/{order_id}
+```
+
+**Authentication:** Customer ID Token Required
+
+**Path Parameters:**
+- `order_id` - Unique identifier of the order
+
+#### Get All Orders
+
+```http
+GET /api/orders/
+```
+
+**Authentication:** Any User ID Token Required (customer, seller, courier)
+
+Returns orders relevant to the authenticated user's role
+
+#### Get Order Details
+
+```http
+GET /api/orders/{order_id}
+```
+
+**Authentication:** Associated User ID Token Required (buyer, seller, courier)
+
+**Path Parameters:**
+- `order_id` - Unique identifier of the order
+
+#### Get Orders by Product (Seller)
+
+```http
+GET /api/order/seller/orders?productId={product_id}
+```
+
+**Authentication:** Seller ID Token Required
+
+**Query Parameters:**
+- `productId` - Filter orders by product ID
+
+#### Update Order Status - Dispatched (Courier)
+
+```http
+PATCH /api/order/courier/update-dispatched/{order_id}
+```
+
+**Authentication:** Courier ID Token Required
+
+**Path Parameters:**
+- `order_id` - Unique identifier of the order
+
+#### Update Order Status - Delivered (Courier)
+
+```http
+PATCH /api/order/courier/update-delivered/{order_id}
+```
+
+**Authentication:** Courier ID Token Required
+
+**Path Parameters:**
+- `order_id` - Unique identifier of the order
+
+---
+
+### Review Endpoints
+
+#### Create Review
+
+```http
+POST /api/review/create
+```
+
+**Authentication:** Customer ID Token Required
+
+**Request Body:**
+```json
+{
+  "orderId": "order_id",
+  "productReview": "Product is working well",
+  "courierReview": "Bit delayed delivery",
+  "productRating": 5,
+  "courierRating": 4
+}
+```
+
+**Ratings:** Integer values from 1 to 5
+
+#### Get Reviews
+
+```http
+GET /api/reviews?productId={product_id}
+GET /api/reviews?sellerId={seller_id}
+GET /api/reviews?courierId={courier_id}
+```
+
+**Query Parameters (choose one):**
+- `productId` - Get reviews for a specific product
+- `sellerId` - Get all reviews for products from a seller
+- `courierId` - Get all reviews for a courier
+
+#### Get Review Details
+
+```http
+GET /api/reviews/{review_id}
+```
+
+**Path Parameters:**
+- `review_id` - Unique identifier of the review
+
+---
+
+### API Response Formats
+
+#### Success Response
+```json
+{
+  "status": "success",
+  "data": { /* response data */ }
+}
+```
+
+#### Error Response
+```json
+{
+  "status": "error",
+  "message": "Error description",
+  "code": "ERROR_CODE"
+}
+```
+
+### Authentication Header Format
+
+All authenticated requests must include:
+```
+Authorization: Bearer <JWT_ID_TOKEN>
+```
+
+---
 
 
-<h2 align="center" id="system-review-and-future-improvements">🔍 System Review and Future Improvements 🔍</h2>
+<h2 align="center" id="future-improvements">Future Improvements</h2>
 
-1. **Automated Testing**: Implement automated testing in both front-end and back-end CI/CD pipelines to ensure the correctness and stability of the application. This includes unit tests, integration tests, and end-to-end tests.
-2. **Monitoring and Logging**: Integrate monitoring tools (Expected: Logstash, Elasticsearch, Kibana) to monitor the health and performance of the system. Implement centralized logging to track and analyze system behavior.
-3. **Performance Optimization**: Currently, backend services, deployed within a VPC, communicate with Amazon DynamoDB over the internet, which introduces considerable latency. Implementing DynamoDB Accelerator (DAX) or/and VPC endpoints can significantly reduce latency. In addition to that, AWS CloudFront can be used to cache static content and improve load times.
-4. **Click Stream Analysis**: System requires analytics to track user interactions and behavior, in order improve user experience and optimize the platform. Implementing a clickstream analysis data pipeline using AWS services (like API Gateway -> Kinesis -> Lambda -> S3 -> Athena -> QuickSight) can provide valuable insights.
+1. **Automated Testing**: Implement unit tests, integration tests, and end-to-end tests in CI/CD pipelines for both frontend and backend.
+
+2. **Monitoring and Logging**: Integrate ELK Stack (Elasticsearch, Logstash, Kibana) for centralized logging, real-time performance metrics, and alert mechanisms.
+
+3. **Performance Optimization**: 
+   - Implement DynamoDB Accelerator (DAX) and VPC endpoints to reduce database latency
+   - Deploy AWS CloudFront CDN for static content caching
+   - Add Redis/ElastiCache for API response caching
+
+4. **Analytics**: Implement clickstream analysis pipeline (API Gateway → Kinesis → Lambda → S3 → Athena → QuickSight) for user behavior tracking and product recommendations.
+
+5. **Search Enhancement**: Integrate Elasticsearch for advanced full-text search with autocomplete and faceted filtering.
+
+6. **Additional Features**: Payment gateway integration (Stripe, PayPal), real-time notifications (WebSockets, SNS), wishlist functionality, and multi-language support.
+
+7. **Security Enhancements**: Implement rate limiting (AWS WAF), two-factor authentication, and regular security audits.
+
+---
+
+<h2 align="center">Contributing</h2>
+
+Contributions are welcome! Please:
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/your-feature`
+3. Commit your changes: `git commit -m 'Add feature'`
+4. Push to the branch: `git push origin feature/your-feature`
+5. Open a Pull Request
+
+---
+
+<h2 align="center">Acknowledgments</h2>
+
+Built with Spring Boot, Angular, and AWS. Special thanks to the Spring, Angular, Kubernetes, and AWS communities.
+
+---
+
+<p align="center">
+  <strong>Built with love using Spring Boot, Angular, and AWS</strong>
+</p>
+
+<p align="center">
+  <sub>NebulaMart - Empowering Digital Commerce</sub>
+</p>
